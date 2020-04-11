@@ -42,7 +42,7 @@ def markdown(*args, **kwargs):
             "code-friendly",
         ]
     )
-    return _markdown(*args, **kwargs, extras=extras)
+    return _markdown(*args, extras=extras, **kwargs)
 
 
 import logging
