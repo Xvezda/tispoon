@@ -545,10 +545,10 @@ if __name__ == "__main__":
     parser.add_argument("--client-id")
     parser.add_argument("--client-secret")
     parser.add_argument(
-        "--blog", help="Specify blog name. (i.e. [blogName].tistory.com)"
+        "--blog", help="specify blog name. (i.e. [blogName].tistory.com)"
     )
     parser.add_argument(
-        "--demo", action="store_true", help="Posting demo article to blog."
+        "--demo", action="store_true", help="posting demo article to blog."
     )
     parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
