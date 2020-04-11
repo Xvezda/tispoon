@@ -1,7 +1,15 @@
 # Tispoon
+[![Version](https://img.shields.io/pypi/v/tispoon)](https://pypi.org/project/tispoon)
+[![License](https://img.shields.io/pypi/l/tispoon)](https://pypi.org/project/tispoon)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 [티스토리 오픈 API](https://www.tistory.com/guide/api/manage/register)를 활용한 파이썬 라이브러리 입니다.
+
+# Installation
+
+```sh
+pip install tispoon
+```
 
 # Copyright
 
