@@ -93,7 +93,7 @@ class BaseCache(object):
                 return item
             return
 
-        if self.TTL != -1 and time.time() - item.timestamp >= self.TTL:
+        if self.TTL != TTL_INF and time.time() - item.timestamp >= self.TTL:
             logger.debug("Cache expired: %s" % (name,))
             del self.items[self.hashing(name)]
             if fallback:
