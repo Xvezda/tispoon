@@ -56,8 +56,10 @@ AUTHOR_EMAIL = "xvezda@naver.com"
 VERSION = "1.0.0"
 API_VERSION = "v1"
 BASE_URL = "https://www.tistory.com"
-PORT = os.getenv("TISPOON_PORT", 9638)
+PORT = int(os.getenv("TISPOON_PORT", 9638))
 REDIR_URL = "http://127.0.0.1:%s/callback" % (PORT,)
+TTL_DEF = int(os.getenv("TISPOON_TTL", 600))
+TTL_INF = -1
 
 
 def dotget(obj, name):
@@ -74,19 +76,33 @@ class CacheItem(object):
 
 
 class BaseCache(object):
-    def __init__(self):
+    def __init__(self, hashing="md5"):
+        self.hashing = lambda x: getattr(hashlib, hashing)(x.encode()).hexdigest()
         self.items = {}
 
     def set(self, name, value):
-        self.items[name] = CacheItem(value)
+        self.items[self.hashing(name)] = CacheItem(value)
 
-    def get(self, name):
-        item = self.items[name]
+    def get(self, name, fallback=None):
+        item = self.items.get(self.hashing(name))
         if not item:
+            if fallback:
+                logger.debug("Retrieving from fallback: %s" % (name,))
+                item = fallback(name)
+                self.set(name, item)
+                return item
             return
+
         if self.TTL != -1 and time.time() - item.timestamp >= self.TTL:
-            del self.items[name]
+            logger.debug("Cache expired: %s" % (name,))
+            del self.items[self.hashing(name)]
+            if fallback:
+                logger.debug("Retrieving from fallback: %s" % (name,))
+                item = fallback(name)
+                self.set(name, item)
+                return item
             return
+        logger.debug("Retrieving from cache: %s" % (name,))
         return item.value
 
 
@@ -95,7 +111,7 @@ class TispoonBase(object):
 
 
 class TispoonCache(BaseCache):
-    TTL = -1  # -1 == INF
+    TTL = TTL_DEF
 
 
 class TispoonError(Exception):
@@ -142,9 +158,10 @@ int main(void)
 
 
 class Tispoon(TispoonBase):
-    def __init__(self, token="", blog=""):
+    def __init__(self, token="", blog="", cache=None):
         self._token = token or os.getenv("TISPOON_TOKEN")
         self._blog = blog or os.getenv("TISPOON_BLOG")
+        self._cache = cache or TispoonCache()
 
     def auth(self, app_id="", app_secret=""):
         if self.token:
@@ -272,6 +289,14 @@ class Tispoon(TispoonBase):
             raise ValueError("value must be type of str")
         self._blog = value
 
+    @property
+    def cache(self):
+        return self._cache
+
+    @cache.setter
+    def cache(self, value):
+        self._cache = value
+
     def assemble_url(self, path, output="json", **kwargs):
         ret = "%s/apis/%s?access_token=%s&output=%s" % (
             BASE_URL,
@@ -287,7 +312,10 @@ class Tispoon(TispoonBase):
 
     def blog_info(self):
         url = self.assemble_url("blog/info")
-        r = requests.get(url)
+        if self.cache:
+            r = self.cache.get(url, requests.get)
+        else:
+            r = requests.get(url)
         res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(res.get("error_message") or "unexpected error")
@@ -304,8 +332,10 @@ class Tispoon(TispoonBase):
 
     def _post_list(self, page=1):
         url = self.assemble_url("post/list", blogName=self.blog, page=page)
-
-        r = requests.get(url)
+        if self.cache:
+            r = self.cache.get(url, requests.get)
+        else:
+            r = requests.get(url)
         if r.status_code != 200:
             raise TispoonError(res.get("error_message") or "unexpected error")
         res = json.loads(r.text)
@@ -357,7 +387,10 @@ class Tispoon(TispoonBase):
             acceptComment=post.get("accept_comment"),
             password=post.get("password"),
         )
-        r = requests.post(url)
+        if self.cache:
+            r = self.cache.get(url, requests.get)
+        else:
+            r = requests.get(url)
         if r.status_code != 200:
             raise TispoonError(res.get("error_message") or "unexpected error")
         res = json.loads(r.text)
@@ -421,7 +454,10 @@ class Tispoon(TispoonBase):
     def category_list(self):
         url = self.assemble_url("category/list", blogName=self.blog)
 
-        r = requests.get(url)
+        if self.cache:
+            r = self.cache.get(url, requests.get)
+        else:
+            r = requests.get(url)
         if r.status_code != 200:
             raise TispoonError(res.get("error_message") or "unexpected error")
         res = json.loads(r.text)
@@ -432,7 +468,10 @@ class Tispoon(TispoonBase):
         url = self.assemble_url(
             "comment/newest", blogName=self.blog, page=page, count=count
         )
-        r = requests.get(url)
+        if self.cache:
+            r = self.cache.get(url, requests.get)
+        else:
+            r = requests.get(url)
         if r.status_code != 200:
             raise TispoonError(res.get("error_message") or "unexpected error")
         res = json.loads(r.text)
@@ -505,11 +544,13 @@ if __name__ == "__main__":
     parser.add_argument("--token")
     parser.add_argument("--client-id")
     parser.add_argument("--client-secret")
-    parser.add_argument("--blog", help="Specify blog name. i.e. [blogName].tistory.com")
+    parser.add_argument(
+        "--blog", help="Specify blog name. (i.e. [blogName].tistory.com)"
+    )
     parser.add_argument(
         "--demo", action="store_true", help="Posting demo article to blog."
     )
-    parser.add_argument("--version")
+    parser.add_argument("--version", action="version", version=VERSION)
     args = parser.parse_args()
 
     try:
