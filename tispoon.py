@@ -14,12 +14,15 @@ import re
 import os
 import sys
 import json
-
 import time
 import socket
-import base64
 import hashlib
 import textwrap
+
+import logging
+
+# logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 import requests
 import six
@@ -45,12 +48,6 @@ def markdown(*args, **kwargs):
     return _markdown(*args, extras=extras, **kwargs)
 
 
-import logging
-
-# logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
 AUTHOR = "Xvezda"
 AUTHOR_EMAIL = "xvezda@naver.com"
 VERSION = "1.0.0"
@@ -60,6 +57,44 @@ PORT = int(os.getenv("TISPOON_PORT", 9638))
 REDIR_URL = "http://127.0.0.1:%s/callback" % (PORT,)
 TTL_DEF = int(os.getenv("TISPOON_TTL", 600))
 TTL_INF = -1
+
+VISIBILITY_PRIVATE = 0
+VISIBILITY_PROTECTED = 1
+VISIBILITY_PUBLISHED = 3
+
+COMMENT_ACCEPT = 0
+COMMENT_CLOSED = 1
+
+COMMENT_SECRET = 1
+COMMENT_PUBLIC = 0
+
+
+DEMO_MARKDOWN = r"""
+# Hello World!
+
+파이썬 기반 티스토리 블로깅 라이브러리
+[Tispoon](https://github.com/Xvezda/tispoon)
+으로 쓰여진 테스트 게시글 입니다. :)
+
+## H2
+### H3
+
+```
+#include <stdio.h>
+
+int main(void)
+{
+    printf("Hello World!\n");
+
+    return 0;
+}
+```
+
+- foo
+  * bar
+  + baz
+
+"""
 
 
 def dotget(obj, name):
@@ -116,45 +151,6 @@ class TispoonCache(BaseCache):
 
 class TispoonError(Exception):
     pass
-
-
-VISIBILITY_PRIVATE = 0
-VISIBILITY_PROTECTED = 1
-VISIBILITY_PUBLISHED = 3
-
-COMMENT_ACCEPT = 0
-COMMENT_CLOSED = 1
-
-COMMENT_SECRET = 1
-COMMENT_PUBLIC = 0
-
-
-DEMO_MARKDOWN = r"""
-# Hello World!
-
-파이썬 기반 티스토리 블로깅 라이브러리
-[Tispoon](https://github.com/Xvezda/tispoon)
-으로 쓰여진 테스트 게시글 입니다. :)
-
-## H2
-### H3
-
-```
-#include <stdio.h>
-
-int main(void)
-{
-    printf("Hello World!\n");
-
-    return 0;
-}
-```
-
-- foo
-  * bar
-  + baz
-
-"""
 
 
 class Tispoon(TispoonBase):

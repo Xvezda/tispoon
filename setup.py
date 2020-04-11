@@ -14,7 +14,7 @@ with open(path.join(here, "README.md")) as f:
 setup(
     name="tispoon",
     version=VERSION,
-    description="",
+    description="Tistory blogging library using open API",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Xvezda/tispoon",
