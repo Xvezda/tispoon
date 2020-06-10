@@ -10,6 +10,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 import re
 import os
 import sys
@@ -19,6 +20,7 @@ import socket
 import hashlib
 import textwrap
 
+import traceback
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +31,12 @@ import six
 from six.moves.urllib.parse import quote, urlparse
 from markdown2 import markdown as _markdown
 import yaml
+
+
+def u(text):
+    if sys.version_info[0] < 3:
+        return unicode(text).encode('utf-8')
+    return text
 
 
 def markdown(*args, **kwargs):
@@ -309,7 +317,8 @@ class Tispoon(TispoonBase):
         for keyname in kwargs:
             if kwargs[keyname] is None:
                 continue
-            ret += "&%s=%s" % (keyname, quote(str(kwargs[keyname])))
+            ret += "&%s=%s" % (
+                keyname, quote(u(kwargs[keyname])))
         return ret
 
     def blog_info(self):
@@ -318,7 +327,7 @@ class Tispoon(TispoonBase):
             r = self.cache.get(url, requests.get)
         else:
             r = requests.get(url)
-        res = json.loads(r.text)
+        res = json.loads(r.text, encoding='utf-8')
         if r.status_code != 200:
             raise TispoonError(
                 dotget(res, "tistory.error_message") or "unexpected error"
@@ -593,6 +602,7 @@ def main():
     parser.add_argument(
         "--demo", "-d", action="store_true", help="posting demo article to blog."
     )
+    parser.add_argument('--verbose', '-v', action='count', default=0)
     parser.add_argument("--version", "-V", action="version", version=VERSION)
     args = parser.parse_args()
 
@@ -618,7 +628,9 @@ def main():
                     )
                 )
     except Exception as err:
-        parser.error(err)
+        if args.verbose > 0:
+            print(traceback.format_exc(), file=sys.stderr)
+        parser.error(u(err))
         parser.print_help()
 
 
