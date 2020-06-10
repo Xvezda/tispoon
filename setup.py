@@ -34,10 +34,10 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    entry_points='''
+    entry_points="""
         [console_scripts]
         tispoon=tispoon:main
-    ''',
+    """,
     keywords="blog blogging openapi korean tistory library",
     py_modules=["tispoon"],
     install_requires=["requests", "markdown2", "six"],
