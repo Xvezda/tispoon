@@ -383,10 +383,7 @@ class Tispoon(TispoonBase):
             acceptComment=post.get("accept_comment"),
             password=post.get("password"),
         )
-        if self.cache:
-            r = self.cache.get(url, requests.get)
-        else:
-            r = requests.get(url)
+        r = requests.post(url)
         res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
