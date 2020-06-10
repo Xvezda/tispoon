@@ -23,7 +23,7 @@ import textwrap
 import traceback
 import logging
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import requests
@@ -59,7 +59,7 @@ def markdown(*args, **kwargs):
 
 AUTHOR = "Xvezda"
 AUTHOR_EMAIL = "xvezda@naver.com"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 API_VERSION = "v1"
 BASE_URL = "https://www.tistory.com"
 PORT = int(os.getenv("TISPOON_PORT", 9638))
