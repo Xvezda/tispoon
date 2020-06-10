@@ -562,10 +562,13 @@ def main():
         t = Tispoon(token=args.token, blog=args.blog)
         if args.demo:
             t.post_demo()
-        elif args.list:
-            print(t.blog_info())
         else:
-            print(json.dumps(t.blogs, indent=4))
+            for blog in t.blogs:
+                print(textwrap.dedent('''\
+                    - name: %s
+                      title: %s
+                      url: %s
+                ''' % (blog.get('name'), blog.get('title'), blog.get('url'))))
     except Exception as err:
         parser.error(err)
         parser.print_help()
