@@ -40,5 +40,5 @@ setup(
     """,
     keywords="blog blogging openapi korean tistory library",
     py_modules=["tispoon"],
-    install_requires=["requests", "markdown2", "six"],
+    install_requires=["requests", "markdown2", "six", "PyYAML"],
 )
