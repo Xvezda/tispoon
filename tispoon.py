@@ -35,7 +35,7 @@ import yaml
 
 def u(text):
     if sys.version_info[0] < 3:
-        return unicode(text).encode('utf-8')
+        return unicode(text).encode("utf-8")
     return text
 
 
@@ -59,7 +59,7 @@ def markdown(*args, **kwargs):
 
 AUTHOR = "Xvezda"
 AUTHOR_EMAIL = "xvezda@naver.com"
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 API_VERSION = "v1"
 BASE_URL = "https://www.tistory.com"
 PORT = int(os.getenv("TISPOON_PORT", 9638))
@@ -317,8 +317,7 @@ class Tispoon(TispoonBase):
         for keyname in kwargs:
             if kwargs[keyname] is None:
                 continue
-            ret += "&%s=%s" % (
-                keyname, quote(u(kwargs[keyname])))
+            ret += "&%s=%s" % (keyname, quote(u(kwargs[keyname])))
         return ret
 
     def blog_info(self):
@@ -327,7 +326,7 @@ class Tispoon(TispoonBase):
             r = self.cache.get(url, requests.get)
         else:
             r = requests.get(url)
-        res = json.loads(r.text, encoding='utf-8')
+        res = json.loads(r.text, encoding="utf-8")
         if r.status_code != 200:
             raise TispoonError(
                 dotget(res, "tistory.error_message") or "unexpected error"
@@ -602,7 +601,7 @@ def main():
     parser.add_argument(
         "--demo", "-d", action="store_true", help="posting demo article to blog."
     )
-    parser.add_argument('--verbose', '-v', action='count', default=0)
+    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--version", "-V", action="version", version=VERSION)
     args = parser.parse_args()
 
@@ -613,7 +612,7 @@ def main():
         elif args.file:
             for mdfile in args.file:
                 print("Posting %s..." % mdfile)
-                with open(mdfile, 'r') as f:
+                with open(mdfile, "r") as f:
                     t.post_write(t.markdown_to_post(f.read()))
         else:
             for blog in t.blogs:
