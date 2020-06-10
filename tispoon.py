@@ -28,6 +28,7 @@ import requests
 import six
 from six.moves.urllib.parse import quote, urlparse
 from markdown2 import markdown as _markdown
+import yaml
 
 
 def markdown(*args, **kwargs):
@@ -69,7 +70,12 @@ COMMENT_SECRET = 1
 COMMENT_PUBLIC = 0
 
 
-DEMO_MARKDOWN = r"""
+DEMO_MARKDOWN = """\
+---
+title: Tispoon 테스트
+visibility: 1
+---
+
 # Hello World!
 
 파이썬 기반 티스토리 블로깅 라이브러리
@@ -314,7 +320,9 @@ class Tispoon(TispoonBase):
             r = requests.get(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
         return res.get("tistory").get("item").get("blogs")
 
     def default_blog(self):
@@ -334,7 +342,9 @@ class Tispoon(TispoonBase):
             r = requests.get(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
         return res
 
     def post_list(self, page=1):
@@ -366,7 +376,9 @@ class Tispoon(TispoonBase):
         r = requests.get(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
         return dotget(res, "tistory.item")
 
     def post_write(self, post):
@@ -386,7 +398,9 @@ class Tispoon(TispoonBase):
         r = requests.post(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
 
         return {
             "post_id": dotget(res, "tistory.postId"),
@@ -411,7 +425,9 @@ class Tispoon(TispoonBase):
         r = requests.post(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
 
         return {
             "post_id": dotget(res, "tistory.postId"),
@@ -428,7 +444,9 @@ class Tispoon(TispoonBase):
         r = requests.post(url, files=files)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
 
         return {
             "url": dotget(res, "tistory.url"),
@@ -436,13 +454,24 @@ class Tispoon(TispoonBase):
         }
 
     def post_demo(self):
-        return self.post_write(
-            {
-                "title": "Tispoon 테스트",
-                "content": markdown(DEMO_MARKDOWN),
-                "visibility": VISIBILITY_PUBLISHED,
-            }
-        )
+        post = self.markdown_to_post(DEMO_MARKDOWN)
+        return self.post_write(post)
+        # return self.post_write(
+        #     {
+        #         "title": "Tispoon 테스트",
+        #         "content": markdown(DEMO_MARKDOWN),
+        #         "visibility": VISIBILITY_PUBLISHED,
+        #     }
+        # )
+
+    def markdown_to_post(self, md):
+        metadata = re.match("""^---\s(.+?)\s---""", md, flags=re.S)
+        if metadata:
+            post = yaml.load(metadata.group(1), Loader=yaml.BaseLoader)
+            content = re.sub("""^---\s(.+?)\s---\s*""", "", md, flags=re.S)
+            post["content"] = markdown(content)
+            return post
+        return {"content": markdown(md)}
 
     def category_list(self):
         url = self.assemble_url("category/list", blogName=self.blog)
@@ -453,7 +482,9 @@ class Tispoon(TispoonBase):
             r = requests.get(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
 
         return dotget(res, "tistory.item.categories")
 
@@ -467,7 +498,9 @@ class Tispoon(TispoonBase):
             r = requests.get(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
 
         return dotget(res, "tistory.item.comments.comment")
 
@@ -476,7 +509,9 @@ class Tispoon(TispoonBase):
         r = requests.get(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
 
         return dotget(res, "tistory.item.comments.comment")
 
@@ -492,7 +527,9 @@ class Tispoon(TispoonBase):
         r = requests.post(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
 
         return dotget(res, "tistory.commentUrl")
 
@@ -509,7 +546,9 @@ class Tispoon(TispoonBase):
         r = requests.post(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
 
         return dotget(res, "tistory.commentUrl")
 
@@ -533,6 +572,7 @@ class Tispoon(TispoonBase):
 def main():
     try:
         import dotenv
+
         dotenv.load_dotenv()
     except ImportError:
         pass
@@ -546,6 +586,7 @@ def main():
     parser.add_argument(
         "--list", "-l", action="store_true", help="list blog informations"
     )
+    parser.add_argument("--file", "-f", action="append", help="markdown file to post")
     parser.add_argument(
         "--blog", "-b", help="specify blog name. (i.e. [blogName].tistory.com)"
     )
@@ -559,13 +600,23 @@ def main():
         t = Tispoon(token=args.token, blog=args.blog)
         if args.demo:
             t.post_demo()
+        elif args.file:
+            for mdfile in args.file:
+                print("Posting %s..." % mdfile)
+                with open(mdfile, 'r') as f:
+                    t.post_write(t.markdown_to_post(f.read()))
         else:
             for blog in t.blogs:
-                print(textwrap.dedent('''\
+                print(
+                    textwrap.dedent(
+                        """\
                     - name: %s
                       title: %s
                       url: %s
-                ''' % (blog.get('name'), blog.get('title'), blog.get('url'))))
+                """
+                        % (blog.get("name"), blog.get("title"), blog.get("url"))
+                    )
+                )
     except Exception as err:
         parser.error(err)
         parser.print_help()
