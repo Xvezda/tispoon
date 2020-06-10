@@ -332,9 +332,9 @@ class Tispoon(TispoonBase):
             r = self.cache.get(url, requests.get)
         else:
             r = requests.get(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
         return res
 
     def post_list(self, page=1):
@@ -364,9 +364,9 @@ class Tispoon(TispoonBase):
         url = self.assemble_url("post/read", blogName=self.blog, postId=post_id)
 
         r = requests.get(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
         return dotget(res, "tistory.item")
 
     def post_write(self, post):
@@ -387,9 +387,9 @@ class Tispoon(TispoonBase):
             r = self.cache.get(url, requests.get)
         else:
             r = requests.get(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
 
         return {
             "post_id": dotget(res, "tistory.postId"),
@@ -412,9 +412,9 @@ class Tispoon(TispoonBase):
             password=post.get("password"),
         )
         r = requests.post(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
 
         return {
             "post_id": dotget(res, "tistory.postId"),
@@ -429,9 +429,9 @@ class Tispoon(TispoonBase):
         url = self.assemble_url("post/attach", blogName=self.blog)
 
         r = requests.post(url, files=files)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
 
         return {
             "url": dotget(res, "tistory.url"),
@@ -454,9 +454,9 @@ class Tispoon(TispoonBase):
             r = self.cache.get(url, requests.get)
         else:
             r = requests.get(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
 
         return dotget(res, "tistory.item.categories")
 
@@ -468,18 +468,18 @@ class Tispoon(TispoonBase):
             r = self.cache.get(url, requests.get)
         else:
             r = requests.get(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
 
         return dotget(res, "tistory.item.comments.comment")
 
     def comment_list(self, post_id):
         url = self.assemble_url("comment/list", blogName=self.blog, postId=post_id)
         r = requests.get(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
 
         return dotget(res, "tistory.item.comments.comment")
 
@@ -493,9 +493,9 @@ class Tispoon(TispoonBase):
             secret=comment.get("secret"),
         )
         r = requests.post(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
 
         return dotget(res, "tistory.commentUrl")
 
@@ -510,9 +510,9 @@ class Tispoon(TispoonBase):
             secret=comment.get("secret"),
         )
         r = requests.post(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
-        res = json.loads(r.text)
 
         return dotget(res, "tistory.commentUrl")
 
@@ -524,11 +524,11 @@ class Tispoon(TispoonBase):
             commentId=comment.get("comment_id"),
         )
         r = requests.post(url)
+        res = json.loads(r.text)
         if r.status_code != 200:
             # raise TispoonError(res.get('error_message') or 'unexpected error')
             logger.error(dotget(res, "tistory.error_message") or "unexpected error")
             return False
-        res = json.loads(r.text)
 
         return True
 
