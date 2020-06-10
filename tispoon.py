@@ -21,7 +21,7 @@ import textwrap
 
 import logging
 
-# logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import requests
@@ -314,7 +314,7 @@ class Tispoon(TispoonBase):
             r = requests.get(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         return res.get("tistory").get("item").get("blogs")
 
     def default_blog(self):
@@ -333,7 +333,7 @@ class Tispoon(TispoonBase):
         else:
             r = requests.get(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
         return res
 
@@ -365,7 +365,7 @@ class Tispoon(TispoonBase):
 
         r = requests.get(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
         return dotget(res, "tistory.item")
 
@@ -388,7 +388,7 @@ class Tispoon(TispoonBase):
         else:
             r = requests.get(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
 
         return {
@@ -413,7 +413,7 @@ class Tispoon(TispoonBase):
         )
         r = requests.post(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
 
         return {
@@ -430,7 +430,7 @@ class Tispoon(TispoonBase):
 
         r = requests.post(url, files=files)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
 
         return {
@@ -455,7 +455,7 @@ class Tispoon(TispoonBase):
         else:
             r = requests.get(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
 
         return dotget(res, "tistory.item.categories")
@@ -469,7 +469,7 @@ class Tispoon(TispoonBase):
         else:
             r = requests.get(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
 
         return dotget(res, "tistory.item.comments.comment")
@@ -478,7 +478,7 @@ class Tispoon(TispoonBase):
         url = self.assemble_url("comment/list", blogName=self.blog, postId=post_id)
         r = requests.get(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
 
         return dotget(res, "tistory.item.comments.comment")
@@ -494,7 +494,7 @@ class Tispoon(TispoonBase):
         )
         r = requests.post(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
 
         return dotget(res, "tistory.commentUrl")
@@ -511,7 +511,7 @@ class Tispoon(TispoonBase):
         )
         r = requests.post(url)
         if r.status_code != 200:
-            raise TispoonError(res.get("error_message") or "unexpected error")
+            raise TispoonError(dotget(res, "tistory.error_message") or "unexpected error")
         res = json.loads(r.text)
 
         return dotget(res, "tistory.commentUrl")
@@ -526,34 +526,50 @@ class Tispoon(TispoonBase):
         r = requests.post(url)
         if r.status_code != 200:
             # raise TispoonError(res.get('error_message') or 'unexpected error')
-            logger.error(res.get("error_message") or "unexpected error")
+            logger.error(dotget(res, "tistory.error_message") or "unexpected error")
             return False
         res = json.loads(r.text)
 
         return True
 
 
-if __name__ == "__main__":
+def main():
+    try:
+        import dotenv
+        dotenv.load_dotenv()
+    except ImportError:
+        pass
+
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--token")
-    parser.add_argument("--client-id")
-    parser.add_argument("--client-secret")
+    parser.add_argument("--token", "-t")
+    parser.add_argument("--client-id", "-u")
+    parser.add_argument("--client-secret", "-p")
     parser.add_argument(
-        "--blog", help="specify blog name. (i.e. [blogName].tistory.com)"
+        "--list", "-l", action="store_true", help="list blog informations"
     )
     parser.add_argument(
-        "--demo", action="store_true", help="posting demo article to blog."
+        "--blog", "-b", help="specify blog name. (i.e. [blogName].tistory.com)"
     )
-    parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument(
+        "--demo", "-d", action="store_true", help="posting demo article to blog."
+    )
+    parser.add_argument("--version", "-V", action="version", version=VERSION)
     args = parser.parse_args()
 
     try:
         t = Tispoon(token=args.token, blog=args.blog)
         if args.demo:
             t.post_demo()
+        elif args.list:
+            print(t.blog_info())
         else:
             print(json.dumps(t.blogs, indent=4))
-    except Exception:
+    except Exception as err:
+        parser.error(err)
         parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
