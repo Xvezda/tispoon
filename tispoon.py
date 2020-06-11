@@ -485,16 +485,16 @@ class Tispoon(TispoonBase):
         self.post_write(self.markdown_to_post(md))
 
     def post_file_path(self, file_path):
-        if file_path == '-':
+        if file_path == "-":
             content = sys.stdin.read()
-            if content.startswith('{'):
+            if content.startswith("{"):
                 self.post_json(content)
             else:
                 self.post_markdown(content)
         else:
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 content = f.read()
-            if file_path.endswith('.json'):
+            if file_path.endswith(".json"):
                 self.post_json(content)
             else:
                 self.post_markdown(content)
@@ -610,7 +610,12 @@ def main():
     parser.add_argument("--token", "-t")
     parser.add_argument("--client-id", "-u")
     parser.add_argument("--client-secret", "-p")
-    parser.add_argument("--file", "-f", action="append", help="markdown or json file to post, set '-' to read from stdin.")
+    parser.add_argument(
+        "--file",
+        "-f",
+        action="append",
+        help="markdown or json file to post, set '-' to read from stdin.",
+    )
     parser.add_argument(
         "--list", "-l", action="store_true", help="list blog informations"
     )
@@ -622,7 +627,7 @@ def main():
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--version", "-V", action="version", version=VERSION)
-    parser.add_argument('files', nargs='*')
+    parser.add_argument("files", nargs="*")
     args = parser.parse_args()
 
     try:
@@ -630,8 +635,8 @@ def main():
         if args.demo:
             t.post_demo()
         elif args.file or args.files:
-            for path in (args.file or [] + args.files):
-                print("posting %s..." % 'stdin' if path == '-' else path)
+            for path in args.file or [] + args.files:
+                print("posting %s..." % "stdin" if path == "-" else path)
                 t.post_file_path(path)
         elif args.list:
             for blog in t.blogs:
