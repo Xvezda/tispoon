@@ -80,8 +80,8 @@ COMMENT_PUBLIC = 0
 
 DEMO_MARKDOWN = """\
 ---
-title: Tispoon 테스트
-visibility: 1
+title: Hello world from Tispoon!
+visibility: 3
 ---
 
 # Hello World!
@@ -464,13 +464,10 @@ class Tispoon(TispoonBase):
     def post_demo(self):
         post = self.markdown_to_post(DEMO_MARKDOWN)
         return self.post_write(post)
-        # return self.post_write(
-        #     {
-        #         "title": "Tispoon 테스트",
-        #         "content": markdown(DEMO_MARKDOWN),
-        #         "visibility": VISIBILITY_PUBLISHED,
-        #     }
-        # )
+
+    def json_to_post(self, json_):
+        post = json.loads(json_)
+        return post
 
     def markdown_to_post(self, md):
         metadata = re.match("""^---\s(.+?)\s---""", md, flags=re.S)
@@ -480,6 +477,27 @@ class Tispoon(TispoonBase):
             post["content"] = markdown(content)
             return post
         return {"content": markdown(md)}
+
+    def post_json(self, json_):
+        self.post_write(self.json_to_post(json_))
+
+    def post_markdown(self, md):
+        self.post_write(self.markdown_to_post(md))
+
+    def post_file_path(self, file_path):
+        if file_path == '-':
+            content = sys.stdin.read()
+            if content.startswith('{'):
+                self.post_json(content)
+            else:
+                self.post_markdown(content)
+        else:
+            with open(file_path, 'r') as f:
+                content = f.read()
+            if file_path.endswith('.json'):
+                self.post_json(content)
+            else:
+                self.post_markdown(content)
 
     def category_list(self):
         url = self.assemble_url("category/list", blogName=self.blog)
@@ -570,8 +588,9 @@ class Tispoon(TispoonBase):
         r = requests.post(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            # raise TispoonError(res.get('error_message') or 'unexpected error')
-            logger.error(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
             return False
 
         return True
@@ -591,10 +610,10 @@ def main():
     parser.add_argument("--token", "-t")
     parser.add_argument("--client-id", "-u")
     parser.add_argument("--client-secret", "-p")
+    parser.add_argument("--file", "-f", action="append", help="markdown or json file to post, set '-' to read from stdin.")
     parser.add_argument(
         "--list", "-l", action="store_true", help="list blog informations"
     )
-    parser.add_argument("--file", "-f", action="append", help="markdown file to post")
     parser.add_argument(
         "--blog", "-b", help="specify blog name. (i.e. [blogName].tistory.com)"
     )
@@ -603,18 +622,18 @@ def main():
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--version", "-V", action="version", version=VERSION)
+    parser.add_argument('files', nargs='*')
     args = parser.parse_args()
 
     try:
         t = Tispoon(token=args.token, blog=args.blog)
         if args.demo:
             t.post_demo()
-        elif args.file:
-            for mdfile in args.file:
-                print("Posting %s..." % mdfile)
-                with open(mdfile, "r") as f:
-                    t.post_write(t.markdown_to_post(f.read()))
-        else:
+        elif args.file or args.files:
+            for path in (args.file or [] + args.files):
+                print("posting %s..." % 'stdin' if path == '-' else path)
+                t.post_file_path(path)
+        elif args.list:
             for blog in t.blogs:
                 print(
                     textwrap.dedent(
@@ -626,6 +645,8 @@ def main():
                         % (blog.get("name"), blog.get("title"), blog.get("url"))
                     )
                 )
+        else:
+            parser.print_help()
     except Exception as err:
         if args.verbose > 0:
             print(traceback.format_exc(), file=sys.stderr)
