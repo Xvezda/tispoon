@@ -12,6 +12,31 @@
 pip install tispoon
 ```
 
+# Usage
+
+```
+usage: tispoon [-h] [--token TOKEN] [--client-id CLIENT_ID]
+               [--client-secret CLIENT_SECRET] [--file FILE] [--list]
+               [--blog BLOG] [--demo] [--verbose] [--version]
+               [files [files ...]]
+
+positional arguments:
+  files
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --token TOKEN, -t TOKEN
+  --client-id CLIENT_ID, -u CLIENT_ID
+  --client-secret CLIENT_SECRET, -p CLIENT_SECRET
+  --file FILE, -f FILE  markdown or json file to post, set '-' to read from
+                        stdin.
+  --list, -l            list blog informations
+  --blog BLOG, -b BLOG  specify blog name. (i.e. [blogName].tistory.com)
+  --demo, -d            posting demo article to blog.
+  --verbose, -v
+  --version, -V         show program's version number and exit
+```
+
 # Copyright
 
 [MIT License](LICENSE)
