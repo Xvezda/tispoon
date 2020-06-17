@@ -597,13 +597,6 @@ class Tispoon(TispoonBase):
 
 
 def main():
-    try:
-        import dotenv
-
-        dotenv.load_dotenv()
-    except ImportError:
-        pass
-
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -629,6 +622,13 @@ def main():
     parser.add_argument("--version", "-V", action="version", version=VERSION)
     parser.add_argument("files", nargs="*")
     args = parser.parse_args()
+
+    try:
+        from dotenv import load_dotenv, find_dotenv
+
+        load_dotenv(find_dotenv(usecwd=True), verbose=(args.verbose > 0))
+    except ImportError:
+        pass
 
     try:
         t = Tispoon(token=args.token, blog=args.blog)
