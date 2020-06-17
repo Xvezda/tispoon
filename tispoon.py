@@ -335,7 +335,7 @@ class Tispoon(TispoonBase):
 
     def default_blog(self):
         blogs = self.blog_info()
-        blog = filter(lambda x: x.get("default") == "Y", blogs)
+        blog = iter(filter(lambda x: x.get("default") == "Y", blogs))
         return six.next(blog)
 
     @property
