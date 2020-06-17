@@ -23,8 +23,8 @@ import textwrap
 import traceback
 import logging
 
-# logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
 
 import requests
 import six
@@ -629,6 +629,11 @@ def main():
         load_dotenv(find_dotenv(usecwd=True), verbose=(args.verbose > 0))
     except ImportError:
         pass
+
+    if args.verbose == 1:
+        logger.setLevel(logging.INFO)
+    elif args.verbose == 2:
+        logger.setLevel(logging.DEBUG)
 
     try:
         t = Tispoon(token=args.token, blog=args.blog)
