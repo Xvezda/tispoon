@@ -32,6 +32,8 @@ from six.moves.urllib.parse import quote, urlparse
 from markdown2 import markdown as _markdown
 import yaml
 
+from version import VERSION
+
 
 def u(text):
     if sys.version_info[0] < 3:
@@ -57,9 +59,6 @@ def markdown(*args, **kwargs):
     return _markdown(*args, extras=extras, **kwargs)
 
 
-AUTHOR = "Xvezda"
-AUTHOR_EMAIL = "xvezda@naver.com"
-VERSION = "1.0.3"
 API_VERSION = "v1"
 BASE_URL = "https://www.tistory.com"
 PORT = int(os.getenv("TISPOON_PORT", 9638))
