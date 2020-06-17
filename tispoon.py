@@ -409,12 +409,12 @@ class Tispoon(TispoonBase):
         r = requests.post(url, data=data)
         try:
             res = json.loads(r.text)
+            if r.status_code != 200:
+                raise TispoonError(
+                    dotget(res, "tistory.error_message") or "unexpected error"
+                )
         except ValueError:
             logger.debug("response: %s" % r.text)
-        if r.status_code != 200:
-            raise TispoonError(
-                dotget(res, "tistory.error_message") or "unexpected error"
-            )
 
         return {
             "post_id": dotget(res, "tistory.postId"),
