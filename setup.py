@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from os import path
 
-from setuptools import setup
-from tispoon import VERSION, AUTHOR, AUTHOR_EMAIL
+from os import path
+from setuptools import setup, find_packages
+
+
+PKG_NAME = 'tispoon'
+
+import six
+with open(path.join(PKG_NAME, 'version.py')) as f:
+    six.exec_(f.read())
+
 
 here = path.abspath(path.dirname(__file__))
 
@@ -12,12 +19,12 @@ with open(path.join(here, "README.md")) as f:
     long_description = f.read()
 
 setup(
-    name="tispoon",
+    name=PKG_NAME,
     version=VERSION,
     description="Tistory blogging library using open API",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Xvezda/tispoon",
+    url="https://github.com/Xvezda/%s" % PKG_NAME,
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     classifiers=[
@@ -36,9 +43,10 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        tispoon=tispoon:main
+        tispoon=tispoon.core:main
     """,
     keywords="blog blogging openapi korean tistory library",
-    py_modules=["tispoon"],
+    packages=find_packages(),
     install_requires=["requests", "markdown2", "six", "PyYAML"],
+    zip_safe=False
 )
