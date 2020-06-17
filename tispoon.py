@@ -394,7 +394,7 @@ class Tispoon(TispoonBase):
             "post/write",
             blogName=self.blog,
             title=post.get("title"),
-            content=post.get("content"),
+            # content=post.get("content"),
             visibility=post.get("visibility"),
             category=post.get("category"),
             published=post.get("published"),
@@ -403,8 +403,14 @@ class Tispoon(TispoonBase):
             acceptComment=post.get("accept_comment"),
             password=post.get("password"),
         )
-        r = requests.post(url)
-        res = json.loads(r.text)
+        data = {
+            "content": post.get("content"),
+        }
+        r = requests.post(url, data=data)
+        try:
+            res = json.loads(r.text)
+        except ValueError:
+            logger.debug("response: %s" % r.text)
         if r.status_code != 200:
             raise TispoonError(
                 dotget(res, "tistory.error_message") or "unexpected error"
