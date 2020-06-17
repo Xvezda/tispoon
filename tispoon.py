@@ -485,25 +485,23 @@ class Tispoon(TispoonBase):
         return {"content": markdown(md)}
 
     def post_json(self, json_):
-        self.post_write(self.json_to_post(json_))
+        return self.post_write(self.json_to_post(json_))
 
     def post_markdown(self, md):
-        self.post_write(self.markdown_to_post(md))
+        return self.post_write(self.markdown_to_post(md))
 
     def post_file_path(self, file_path):
         if file_path == "-":
             content = sys.stdin.read()
             if content.startswith("{"):
-                self.post_json(content)
-            else:
-                self.post_markdown(content)
+                return self.post_json(content)
+            return self.post_markdown(content)
         else:
             with open(file_path, "r") as f:
                 content = f.read()
             if file_path.endswith(".json"):
-                self.post_json(content)
-            else:
-                self.post_markdown(content)
+                return self.post_json(content)
+            return self.post_markdown(content)
 
     def category_list(self):
         url = self.assemble_url("category/list", blogName=self.blog)
@@ -648,7 +646,8 @@ def main():
         elif args.file or args.files:
             for path in args.file or [] + args.files:
                 print("posting %s..." % "stdin" if path == "-" else path)
-                t.post_file_path(path)
+                res = t.post_file_path(path)
+                print('url: %s' % res.get('url'))
         elif args.list:
             for blog in t.blogs:
                 print(
