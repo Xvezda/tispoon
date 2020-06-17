@@ -23,8 +23,8 @@ import textwrap
 import traceback
 import logging
 
-# logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
 
 import requests
 import six
@@ -59,7 +59,7 @@ def markdown(*args, **kwargs):
 
 AUTHOR = "Xvezda"
 AUTHOR_EMAIL = "xvezda@naver.com"
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 API_VERSION = "v1"
 BASE_URL = "https://www.tistory.com"
 PORT = int(os.getenv("TISPOON_PORT", 9638))
@@ -80,8 +80,8 @@ COMMENT_PUBLIC = 0
 
 DEMO_MARKDOWN = """\
 ---
-title: Tispoon 테스트
-visibility: 1
+title: Hello world from Tispoon!
+visibility: 3
 ---
 
 # Hello World!
@@ -335,7 +335,7 @@ class Tispoon(TispoonBase):
 
     def default_blog(self):
         blogs = self.blog_info()
-        blog = filter(lambda x: x.get("default") == "Y", blogs)
+        blog = iter(filter(lambda x: x.get("default") == "Y", blogs))
         return six.next(blog)
 
     @property
@@ -394,7 +394,7 @@ class Tispoon(TispoonBase):
             "post/write",
             blogName=self.blog,
             title=post.get("title"),
-            content=post.get("content"),
+            # content=post.get("content"),
             visibility=post.get("visibility"),
             category=post.get("category"),
             published=post.get("published"),
@@ -403,12 +403,18 @@ class Tispoon(TispoonBase):
             acceptComment=post.get("accept_comment"),
             password=post.get("password"),
         )
-        r = requests.post(url)
-        res = json.loads(r.text)
-        if r.status_code != 200:
-            raise TispoonError(
-                dotget(res, "tistory.error_message") or "unexpected error"
-            )
+        data = {
+            "content": post.get("content"),
+        }
+        r = requests.post(url, data=data)
+        try:
+            res = json.loads(r.text)
+            if r.status_code != 200:
+                raise TispoonError(
+                    dotget(res, "tistory.error_message") or "unexpected error"
+                )
+        except ValueError:
+            logger.debug("response: %s" % r.text)
 
         return {
             "post_id": dotget(res, "tistory.postId"),
@@ -464,13 +470,10 @@ class Tispoon(TispoonBase):
     def post_demo(self):
         post = self.markdown_to_post(DEMO_MARKDOWN)
         return self.post_write(post)
-        # return self.post_write(
-        #     {
-        #         "title": "Tispoon 테스트",
-        #         "content": markdown(DEMO_MARKDOWN),
-        #         "visibility": VISIBILITY_PUBLISHED,
-        #     }
-        # )
+
+    def json_to_post(self, json_):
+        post = json.loads(json_)
+        return post
 
     def markdown_to_post(self, md):
         metadata = re.match("""^---\s(.+?)\s---""", md, flags=re.S)
@@ -480,6 +483,25 @@ class Tispoon(TispoonBase):
             post["content"] = markdown(content)
             return post
         return {"content": markdown(md)}
+
+    def post_json(self, json_):
+        return self.post_write(self.json_to_post(json_))
+
+    def post_markdown(self, md):
+        return self.post_write(self.markdown_to_post(md))
+
+    def post_file_path(self, file_path):
+        if file_path == "-":
+            content = sys.stdin.read()
+            if content.startswith("{"):
+                return self.post_json(content)
+            return self.post_markdown(content)
+        else:
+            with open(file_path, "r") as f:
+                content = f.read()
+            if file_path.endswith(".json"):
+                return self.post_json(content)
+            return self.post_markdown(content)
 
     def category_list(self):
         url = self.assemble_url("category/list", blogName=self.blog)
@@ -570,21 +592,15 @@ class Tispoon(TispoonBase):
         r = requests.post(url)
         res = json.loads(r.text)
         if r.status_code != 200:
-            # raise TispoonError(res.get('error_message') or 'unexpected error')
-            logger.error(dotget(res, "tistory.error_message") or "unexpected error")
+            raise TispoonError(
+                dotget(res, "tistory.error_message") or "unexpected error"
+            )
             return False
 
         return True
 
 
 def main():
-    try:
-        import dotenv
-
-        dotenv.load_dotenv()
-    except ImportError:
-        pass
-
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -592,9 +608,14 @@ def main():
     parser.add_argument("--client-id", "-u")
     parser.add_argument("--client-secret", "-p")
     parser.add_argument(
+        "--file",
+        "-f",
+        action="append",
+        help="markdown or json file to post, set '-' to read from stdin.",
+    )
+    parser.add_argument(
         "--list", "-l", action="store_true", help="list blog informations"
     )
-    parser.add_argument("--file", "-f", action="append", help="markdown file to post")
     parser.add_argument(
         "--blog", "-b", help="specify blog name. (i.e. [blogName].tistory.com)"
     )
@@ -603,18 +624,31 @@ def main():
     )
     parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument("--version", "-V", action="version", version=VERSION)
+    parser.add_argument("files", nargs="*")
     args = parser.parse_args()
+
+    try:
+        from dotenv import load_dotenv, find_dotenv
+
+        load_dotenv(find_dotenv(usecwd=True), verbose=(args.verbose > 0))
+    except ImportError:
+        pass
+
+    if args.verbose == 1:
+        logger.setLevel(logging.INFO)
+    elif args.verbose == 2:
+        logger.setLevel(logging.DEBUG)
 
     try:
         t = Tispoon(token=args.token, blog=args.blog)
         if args.demo:
             t.post_demo()
-        elif args.file:
-            for mdfile in args.file:
-                print("Posting %s..." % mdfile)
-                with open(mdfile, "r") as f:
-                    t.post_write(t.markdown_to_post(f.read()))
-        else:
+        elif args.file or args.files:
+            for path in args.file or [] + args.files:
+                print("posting %s..." % "stdin" if path == "-" else path)
+                res = t.post_file_path(path)
+                print('url: %s' % res.get('url'))
+        elif args.list:
             for blog in t.blogs:
                 print(
                     textwrap.dedent(
@@ -626,6 +660,8 @@ def main():
                         % (blog.get("name"), blog.get("title"), blog.get("url"))
                     )
                 )
+        else:
+            parser.print_help()
     except Exception as err:
         if args.verbose > 0:
             print(traceback.format_exc(), file=sys.stderr)
