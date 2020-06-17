@@ -59,7 +59,7 @@ def markdown(*args, **kwargs):
 
 AUTHOR = "Xvezda"
 AUTHOR_EMAIL = "xvezda@naver.com"
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 API_VERSION = "v1"
 BASE_URL = "https://www.tistory.com"
 PORT = int(os.getenv("TISPOON_PORT", 9638))
