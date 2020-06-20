@@ -158,22 +158,22 @@ class BaseCache(object):
         item = self.items.get(self.hashing(name))
         if not item:
             if fallback:
-                logger.debug("Retrieving from fallback: %s" % (name,))
+                logger.debug("fallback으로 부터 가져옴: %s" % (name,))
                 item = fallback(name)
                 self.set(name, item)
                 return item
             return
 
         if self.TTL != TTL_INF and time.time() - item.timestamp >= self.TTL:
-            logger.debug("Cache expired: %s" % (name,))
+            logger.debug("캐시 만료: %s" % (name,))
             del self.items[self.hashing(name)]
             if fallback:
-                logger.debug("Retrieving from fallback: %s" % (name,))
+                logger.debug("fallback으로 부터 가져옴: %s" % (name,))
                 item = fallback(name)
                 self.set(name, item)
                 return item
             return
-        logger.debug("Retrieving from cache: %s" % (name,))
+        logger.debug("cache로 부터 가져옴: %s" % (name,))
         return item.value
 
 
@@ -206,7 +206,7 @@ class Tispoon(TispoonBase):
     def auth(self, app_id="", app_secret=""):
         """토큰이 없는 경우, API로부터 토큰을 새로 발급하는 매서드함수 입니다."""
         if self.token:
-            logger.debug("Token already exists")
+            logger.debug("토큰이 이미 존재합니다.")
             return True
 
         if not app_id:
@@ -215,7 +215,7 @@ class Tispoon(TispoonBase):
             app_secret = os.getenv("TISPOON_APP_SECRET")
 
         if not app_id or not app_secret:
-            raise ValueError("app_id, app_secret must be provided")
+            raise ValueError("app_id, app_secret 둘 중 하나는 반드시 제공되어야 합니다.")
 
         # 보안을 위한 임의 토큰을 생성합니다.
         state = hashlib.sha256(os.urandom(32)).hexdigest()
@@ -243,7 +243,7 @@ class Tispoon(TispoonBase):
             browser = webbrowser.get()
             browser.open(url, new=2)
         except webbrowser.Error:  # 웹 브라우저가 존재하지 않는경우 인증 주소를 stdout으로 알립니다.
-            print("Visit following link to grant access", file=sys.stderr)
+            print("다음의 주소를 방문하여 권한을 허락해주세요.", file=sys.stderr)
             print(url, file=sys.stderr)
 
         # Callback 인증에 사용될 임시 HTTP 서버를 생성합니다.
@@ -258,7 +258,7 @@ class Tispoon(TispoonBase):
         req = conn.recv(1024).decode().split("\r\n\r\n")[0]
         try:
             if not req.startswith("GET %s" % (urlparse(REDIR_URL).path,)):
-                logger.debug("Request is invalid")
+                logger.debug("잘못된 요청 입니다.")
                 return False
             code = re.search(
                 r"^GET /[^\?]*\?.*&?code=([^&]*).* HTTP/\d\.\d", req, re.M
@@ -267,7 +267,7 @@ class Tispoon(TispoonBase):
                 r"^GET /[^\?]*\?.*&?state=([^&]*).* HTTP/\d\.\d", req, re.M
             ).group(1)
         except AttributeError:
-            logger.debug("Requirements not satisfied")
+            logger.debug("요구조건을 충족하지 않았습니다.")
             return False
         finally:
             conn.send(b"HTTP/1.1 200 OK\r\n")
@@ -278,7 +278,7 @@ class Tispoon(TispoonBase):
             s.close()
 
         if prev_state != state:
-            logger.debug("Invalid state integrity")
+            logger.debug("잘못된 공격방지 문자열이 전달되었습니다.")
             return False
 
         url = (
@@ -306,7 +306,7 @@ class Tispoon(TispoonBase):
         try:
             token = re.search(r"access_token=(\w+)", r.text).group(1)
         except AttributeError:
-            logger.debug("Fail to fetch access token")
+            logger.debug("access token을 가져오는데 실패했습니다.")
             return False
 
         self.token = token
@@ -319,7 +319,7 @@ class Tispoon(TispoonBase):
     @token.setter
     def token(self, value):
         if type(value) is not str:
-            raise ValueError("value must be type of str")
+            raise ValueError("값은 반드시 문자열이어야 합니다.")
         self._token = value
 
     @property
@@ -332,7 +332,7 @@ class Tispoon(TispoonBase):
     @blog.setter
     def blog(self, value):
         if type(value) is not str:
-            raise ValueError("value must be type of str")
+            raise ValueError("값은 반드시 문자열이어야 합니다.")
         self._blog = value
 
     @property
@@ -367,12 +367,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text, encoding="utf-8")
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류"
                 )
         return res.get("tistory").get("item").get("blogs")
 
@@ -397,17 +397,17 @@ class Tispoon(TispoonBase):
             r = requests.get(url)
 
         if r.status_code != 200:
-            raise TispoonError("unexpected error occurred")
+            raise TispoonError("예상치 못한 오류 발생")
 
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
         return res
 
@@ -453,7 +453,7 @@ class Tispoon(TispoonBase):
                 )
                 clean_slogan = remove_prefix(slogan)
                 if simplified_url.startswith(quote(clean_slogan)):
-                    logger.debug("posting founded! -> %s" % post.get("title"))
+                    logger.debug("포스팅 발견! -> %s" % post.get("title"))
                     return post
             elif title:
                 if post.get("title") == title:
@@ -475,7 +475,7 @@ class Tispoon(TispoonBase):
     def post_read(self, post_id=None):
         """게시글의 내용을 가져옵니다."""
         if not post_id:
-            raise TispoonError("post_id is empty")
+            raise TispoonError("post_id가 비어있습니다.")
 
         url = self.assemble_url(
             "post/read", blogName=self.blog, postId=post_id
@@ -489,7 +489,7 @@ class Tispoon(TispoonBase):
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
         return dotget(res, "tistory.item")
 
@@ -514,12 +514,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
         return {
@@ -550,12 +550,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
         return {
@@ -566,7 +566,7 @@ class Tispoon(TispoonBase):
     def post_attach(self, path=None, fp=None):
         """첨부파일을 업로드합니다."""
         if not path and not fp:
-            raise TispoonError("path or fp required")
+            raise TispoonError("path 혹은 fp가 필요합니다.")
         files = {"uploadedfile": fp or open(path, "rb")}
 
         url = self.assemble_url("post/attach", blogName=self.blog)
@@ -576,12 +576,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
         return {
@@ -624,10 +624,10 @@ class Tispoon(TispoonBase):
         founded = self.find_post(slogan=post.get("slogan"))
         if post_id or founded:
             if founded:
-                logger.info("same posting founded:")
+                logger.info("동일한 포스팅 발견")
                 logger.info(" " * 2 + "- id: %s" % founded.get("id"))
                 logger.info(" " * 2 + "- title: %s" % founded.get("title"))
-            logger.info("updating post...")
+            logger.info("포스팅 업데이트 중...")
             return self.post_modify(post_id, post)
         return self.post_write(post)
 
@@ -656,12 +656,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
         return dotget(res, "tistory.item.categories")
@@ -710,12 +710,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
         return dotget(res, "tistory.item.comments.comment")
@@ -729,17 +729,17 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
         if r.status_code != 200:
             raise TispoonError(
-                dotget(res, "tistory.error_message") or "unexpected error"
+                dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
             )
         logger.debug("response: %s" % res)
         if dotget(res, "tistory.item.totalCount") == "0":
@@ -763,12 +763,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
         return dotget(res, "tistory.commentUrl")
@@ -789,12 +789,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
         return dotget(res, "tistory.commentUrl")
@@ -811,12 +811,12 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
-            logger.debug("response: %s" % r.text)
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
                 raise TispoonError(
-                    dotget(res, "tistory.error_message") or "unexpected error"
+                    dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
                 return False
         return True
@@ -874,7 +874,7 @@ def comment_command(args):
     for post_id in args.post_ids:
         if args.delete:
             client.comment_delete(post_id, args.comment_id)
-            print("deleted: %d" % args.comment_id)
+            print("삭제완료: %d" % args.comment_id)
             return
 
         if args.content:
@@ -908,11 +908,11 @@ def main():
     import argparse  # noqa
 
     common_parser = argparse.ArgumentParser(add_help=False)
-    common_parser.add_argument("--token", "-t")
-    common_parser.add_argument("--client-id", "-u")
-    common_parser.add_argument("--client-secret", "-p")
+    common_parser.add_argument("--token", "-t", help='인증 토큰을 설정합니다.')
+    common_parser.add_argument("--client-id", "-u", help="Open API의 client id값을 설정합니다.")
+    common_parser.add_argument("--client-secret", "-p", help="Open API의 client secret값을 설정합니다.")
     common_parser.add_argument(
-        "--blog", "-b", help="specify blog name. (i.e. [blogName].tistory.com)"
+        "--blog", "-b", help="블로그 이름을 설정합니다. 예) `xvezda.tistory.com` 의 경우 `xvezda`"
     )
     common_parser.add_argument("--verbose", "-v", action="count", default=0)
     common_parser.add_argument(
@@ -922,7 +922,7 @@ def main():
     parser = argparse.ArgumentParser(parents=[common_parser])
     subparsers = parser.add_subparsers(dest="command")
 
-    info_parser = subparsers.add_parser("info", parents=[common_parser])
+    info_parser = subparsers.add_parser("info", parents=[common_parser], help="자신의 블로그 정보를 가져오는 API 입니다.")
     info_parser.set_defaults(func=info_command)
 
     post_parser = subparsers.add_parser("post", parents=[common_parser])
@@ -933,13 +933,14 @@ def main():
         "--file",
         "-f",
         action="append",
-        help="markdown or json file to post, set '-' to read from stdin.",
+        help="마크다운 또는 JSON 파일의 경로를 설정합니다. "
+             "`-` 으로 설정하여 stdin으로 부터 읽어올 수 있습니다.",
     )
     post_parser.add_argument(
         "--demo",
         "-D",
         action="store_true",
-        help="posting demo article to blog.",
+        help="블로그에 데모 포스팅을 작성합니다.",
     )
     post_parser.add_argument("files", nargs="*")
     post_parser.set_defaults(func=post_command)
@@ -947,19 +948,19 @@ def main():
     category_parser = subparsers.add_parser(
         "category", parents=[common_parser]
     )
-    category_parser.add_argument("--name", "-n", action="append", default=[])
-    category_parser.add_argument("--label", "-l", action="append", default=[])
-    category_parser.add_argument("--id", "-i", action="append", default=[])
-    category_parser.add_argument("--parent", "-m", action="append", default=[])
+    category_parser.add_argument("--name", "-n", action="append", default=[], help="카테고리 이름")
+    category_parser.add_argument("--label", "-l", action="append", default=[], help="카테고리 라벨")
+    category_parser.add_argument("--id", "-i", action="append", default=[], help="카테고리 아이디")
+    category_parser.add_argument("--parent", "-m", action="append", default=[], help="부모 카테고리 아이디")
     category_parser.set_defaults(func=category_command)
 
     comment_parser = subparsers.add_parser("comment", parents=[common_parser])
-    comment_parser.add_argument("--list", "-l", action="store_true")
-    comment_parser.add_argument("--new", "-n", action="store_true")
-    comment_parser.add_argument("--delete", "-d", action="store_true")
-    comment_parser.add_argument("--content", "-c", type=str)
-    comment_parser.add_argument("--parent-id", "-m", type=str)
-    comment_parser.add_argument("--comment-id", "-i", type=str)
+    comment_parser.add_argument("--list", "-l", action="store_true", help="댓글 목록을 가져옵니다.")
+    comment_parser.add_argument("--new", "-n", action="store_true", help="최근 댓글 목록을 가져옵니다.")
+    comment_parser.add_argument("--delete", "-d", action="store_true", help="댓글을 삭제합니다.")
+    comment_parser.add_argument("--content", "-c", type=str, help="댓글의 내용")
+    comment_parser.add_argument("--parent-id", "-m", type=str, help="대댓글을 작성할 댓글의 아이디")
+    comment_parser.add_argument("--comment-id", "-i", type=str, help="댓글의 아이디")
     comment_parser.add_argument("post_ids", nargs="+")
     comment_parser.set_defaults(func=comment_command)
 
