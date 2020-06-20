@@ -8,4 +8,4 @@
 
 AUTHOR = "Xvezda"
 AUTHOR_EMAIL = "xvezda@naver.com"
-VERSION = "1.0.4"
+VERSION = "1.0.5"
