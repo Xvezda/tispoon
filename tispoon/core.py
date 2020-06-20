@@ -444,15 +444,19 @@ class Tispoon(TispoonBase):
     def find_post(self, title=None, slogan=None):
         for post in self.posts:
             if slogan:
+
                 def remove_prefix(url):
-                    return re.sub(r'^(\.{0,2}\/)*', '', url)
-                simplified_url = remove_prefix(post.get('postUrl', '').replace('-', ''))
+                    return re.sub(r"^(\.{0,2}\/)*", "", url)
+
+                simplified_url = remove_prefix(
+                    post.get("postUrl", "").replace("-", "")
+                )
                 clean_slogan = remove_prefix(slogan)
                 if simplified_url.startswith(quote(clean_slogan)):
-                    logger.debug('posting founded! -> %s' % post.get('title'))
+                    logger.debug("posting founded! -> %s" % post.get("title"))
                     return post
             elif title:
-                if post.get('title') == title:
+                if post.get("title") == title:
                     return post
         return None
 
@@ -461,7 +465,9 @@ class Tispoon(TispoonBase):
         results = []
         # TODO: Implement all features
         if title:
-            results.extend(list(filter(lambda x: x.get('title') == title, post_list)))
+            results.extend(
+                list(filter(lambda x: x.get("title") == title, post_list))
+            )
         else:
             results = post_list
         return results
@@ -614,14 +620,14 @@ class Tispoon(TispoonBase):
         # 다음과 같은 경우에 게시글을 새로 작성하기 보다 업데이트 합니다.
         #  - 만약 포스팅 아이디가 게시글의 메타데이터에 존재하는 경우
         #  - 만약 같은 포스팅 URL(Slogan)이 게시글에 존재하는 경우
-        post_id = post.get('id') or post.get('postId')
-        founded = self.find_post(slogan=post.get('slogan'))
+        post_id = post.get("id") or post.get("postId")
+        founded = self.find_post(slogan=post.get("slogan"))
         if post_id or founded:
             if founded:
-                logger.info('same posting founded:')
-                logger.info(' ' * 2 + '- id: %s' % founded.get('id'))
-                logger.info(' ' * 2 + '- title: %s' % founded.get('title'))
-            logger.info('updating post...')
+                logger.info("same posting founded:")
+                logger.info(" " * 2 + "- id: %s" % founded.get("id"))
+                logger.info(" " * 2 + "- title: %s" % founded.get("title"))
+            logger.info("updating post...")
             return self.post_modify(post_id, post)
         return self.post_write(post)
 
@@ -735,8 +741,11 @@ class Tispoon(TispoonBase):
             raise TispoonError(
                 dotget(res, "tistory.error_message") or "unexpected error"
             )
+        logger.debug("response: %s" % res)
+        if dotget(res, "tistory.item.totalCount") == "0":
+            return []
 
-        return dotget(res, "tistory.item.comments.comment")
+        return dotget(res, "tistory.item.comments")
 
     def comment_write(self, post_id, comment):
         """댓글을 작성합니다."""
@@ -790,13 +799,13 @@ class Tispoon(TispoonBase):
 
         return dotget(res, "tistory.commentUrl")
 
-    def comment_delete(self, post_id, comment):
+    def comment_delete(self, post_id, comment_id):
         """댓글을 삭제합니다."""
         url = self.assemble_url(
             "comment/delete",
             blogName=self.blog,
             postId=post_id,
-            commentId=comment.get("comment_id"),
+            commentId=comment_id,
         )
         r = requests.post(url)
         try:
@@ -810,7 +819,6 @@ class Tispoon(TispoonBase):
                     dotget(res, "tistory.error_message") or "unexpected error"
                 )
                 return False
-
         return True
 
 
@@ -839,7 +847,7 @@ def post_command(args):
                     - title: %s
                       id: %s
                       url: %s"""
-                    % (post.get("title"), post.get("id"), post.get('postUrl'))
+                    % (post.get("title"), post.get("id"), post.get("postUrl"))
                 )
             )
         return
@@ -862,8 +870,38 @@ def category_command(args):
 
 
 def comment_command(args):
-    # pass
-    raise NotImplementedError
+    client = Tispoon(args)
+    for post_id in args.post_ids:
+        if args.delete:
+            client.comment_delete(post_id, args.comment_id)
+            print('deleted: %d' % args.comment_id)
+            return
+
+        if args.content:
+            url = client.comment_write(post_id, {"content": args.content})
+            print("url: %s" % url)
+
+        if args.list:
+            if args.new:
+                func = client.comment_newest
+            else:
+                func = client.comment_list
+
+            comments = func(post_id)
+            for comment in comments:
+                print(
+                    textwrap.dedent(
+                        """\
+                    - id: %s 
+                      name: %s
+                      comment: %s"""
+                        % (
+                            comment.get("id"),
+                            comment.get("name"),
+                            comment.get("comment"),
+                        )
+                    )
+                )
 
 
 def main():
@@ -889,7 +927,8 @@ def main():
 
     post_parser = subparsers.add_parser("post", parents=[common_parser])
     post_parser.add_argument("--list", "-l", action="store_true")
-    post_parser.add_argument("--delete", "-d", action="store_true")
+    # NOTE: Tistory API v1 does not support deleting post.. WHAT?
+    # post_parser.add_argument("--delete", "-d", action="store_true")
     post_parser.add_argument(
         "--file",
         "-f",
@@ -915,9 +954,13 @@ def main():
     category_parser.set_defaults(func=category_command)
 
     comment_parser = subparsers.add_parser("comment", parents=[common_parser])
-    comment_parser.add_argument('--list', '-l', action='store_true')
-    comment_parser.add_argument('--url', '-i', action='store_true')
-    comment_parser.add_argument('urls', nargs='*')
+    comment_parser.add_argument("--list", "-l", action="store_true")
+    comment_parser.add_argument("--new", "-n", action="store_true")
+    comment_parser.add_argument("--delete", "-d", action="store_true")
+    comment_parser.add_argument("--content", "-c", type=str)
+    comment_parser.add_argument("--parent-id", "-m", type=str)
+    comment_parser.add_argument("--comment-id", "-i", type=str)
+    comment_parser.add_argument("post_ids", nargs="+")
     comment_parser.set_defaults(func=comment_command)
 
     args = parser.parse_args()
