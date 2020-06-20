@@ -16,23 +16,25 @@ pip install tispoon
 
 ```
 usage: tispoon [-h] [--token TOKEN] [--client-id CLIENT_ID]
-               [--client-secret CLIENT_SECRET] [--file FILE] [--list]
-               [--blog BLOG] [--demo] [--verbose] [--version]
-               [files [files ...]]
+               [--client-secret CLIENT_SECRET] [--blog BLOG] [--verbose]
+               [--version]
+               {info,post,category,comment} ...
 
 positional arguments:
-  files
+  {info,post,category,comment}
+    info                자신의 블로그 정보를 가져오는 API
+                        입니다.
 
 optional arguments:
   -h, --help            show this help message and exit
   --token TOKEN, -t TOKEN
+                        인증 토큰을 설정합니다.
   --client-id CLIENT_ID, -u CLIENT_ID
+                        Open API의 client id값을 설정합니다.
   --client-secret CLIENT_SECRET, -p CLIENT_SECRET
-  --file FILE, -f FILE  markdown or json file to post, set '-' to read from
-                        stdin.
-  --list, -l            list blog informations
-  --blog BLOG, -b BLOG  specify blog name. (i.e. [blogName].tistory.com)
-  --demo, -d            posting demo article to blog.
+                        Open API의 client secret값을 설정합니다.
+  --blog BLOG, -b BLOG  블로그 이름을 설정합니다. 예)
+                        `xvezda.tistory.com` 의 경우 `xvezda`
   --verbose, -v
   --version, -V         show program's version number and exit
 ```
