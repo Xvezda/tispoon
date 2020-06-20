@@ -6,10 +6,11 @@ from os import path
 from setuptools import setup, find_packages
 
 
-PKG_NAME = 'tispoon'
+PKG_NAME = "tispoon"
 
 import six
-with open(path.join(PKG_NAME, 'version.py')) as f:
+
+with open(path.join(PKG_NAME, "version.py")) as f:
     six.exec_(f.read())
 
 
@@ -47,6 +48,6 @@ setup(
     """,
     keywords="blog blogging openapi korean tistory library",
     packages=find_packages(),
-    install_requires=["requests", "markdown2", "six", "PyYAML"],
-    zip_safe=False
+    install_requires=["requests", "markdown2", "six"],
+    zip_safe=False,
 )
