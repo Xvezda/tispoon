@@ -54,9 +54,11 @@ def markdown(*args, **kwargs):
 
     extras.extend(
         [
+            "tables",
             "target-blank-links",
             "spoiler",
             "nofollow",
+            "metadata",
             "fenced-code-blocks",
             "code-friendly",
         ]
