@@ -449,20 +449,19 @@ class Tispoon(TispoonBase):
         """게시글을 작성합니다."""
         url = self.assemble_url(
             "post/write",
-            blogName=self.blog,
-            title=post.get("title"),
-            # content=post.get("content"),
-            visibility=post.get("visibility"),
-            category=post.get("category"),
-            published=post.get("published"),
-            slogan=post.get("slogan"),
-            tag=post.get("tag"),
-            acceptComment=post.get("accept_comment"),
-            password=post.get("password"),
+            blogName=self.blog
         )
 
         data = {
+            "title": post.get("title"),
             "content": post.get("content"),
+            "visibility": post.get("visibility"),
+            "category": post.get("category"),
+            "published": post.get("published"),
+            "slogan": post.get("slogan"),
+            "tag": post.get("tag"),
+            "acceptComment": post.get("accept_comment"),
+            "password": post.get("password"),
         }
 
         r = requests.post(url, data=data)
@@ -489,18 +488,21 @@ class Tispoon(TispoonBase):
             "post/modify",
             blogName=self.blog,
             postId=post_id,
-            title=post.get("title"),
-            content=post.get("content"),
-            visibility=post.get("visibility"),
-            category=post.get("category"),
-            published=post.get("published"),
-            slogan=post.get("slogan"),
-            tag=post.get("tag"),
-            acceptComment=post.get("accept_comment"),
-            password=post.get("password"),
         )
 
-        r = requests.post(url)
+        data = {
+            "title": post.get("title"),
+            "content": post.get("content"),
+            "visibility": post.get("visibility"),
+            "category": post.get("category"),
+            "published": post.get("published"),
+            "slogan": post.get("slogan"),
+            "tag": post.get("tag"),
+            "acceptComment": post.get("accept_comment"),
+            "password": post.get("password"),
+        }
+
+        r = requests.post(url, data=data)
 
         try:
             res = json.loads(r.text)
@@ -662,13 +664,16 @@ class Tispoon(TispoonBase):
         url = self.assemble_url(
             "comment/write",
             blogName=self.blog,
-            postId=post_id,
-            parentId=comment.get("parent_id"),
-            content=comment.get("content"),
-            secret=comment.get("secret"),
         )
 
-        r = requests.post(url)
+        data = {
+            "postId": post_id,
+            "parentId": comment.get("parent_id"),
+            "content": comment.get("content"),
+            "secret": comment.get("secret"),
+        }
+
+        r = requests.post(url, data=data)
 
         try:
             res = json.loads(r.text)
@@ -688,13 +693,16 @@ class Tispoon(TispoonBase):
         url = self.assemble_url(
             "comment/modify",
             blogName=self.blog,
-            postId=post_id,
-            parentId=comment.get("parent_id"),
-            commentId=comment.get("comment_id"),
-            content=comment.get("content"),
-            secret=comment.get("secret"),
         )
-        r = requests.post(url)
+
+        data = {
+            "postId": post_id,
+            "parentId": comment.get("parent_id"),
+            "commentId": comment.get("comment_id"),
+            "content": comment.get("content"),
+            "secret": comment.get("secret"),
+        }
+        r = requests.post(url, data=data)
 
         try:
             res = json.loads(r.text)
