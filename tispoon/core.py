@@ -561,16 +561,13 @@ class Tispoon(TispoonBase):
     def markdown_to_post(self, md):
         """`markdown` 파일을 게시글 객체로 변환합니다.
 
-        `R MarkDown`의 문법과 유사하게, 게시글의 첫 부분이 `---` 로 시작할 경우
+        게시글의 첫 부분이 `---` 로 시작할 경우
         해당 영역을 `yaml`형식으로 파싱하여 메타데이터로서 사용합니다.
         """
-        metadata = re.match(r"""^---\s(.+?)\s---""", md, flags=re.S)
-        if metadata:
-            post = yaml.load(metadata.group(1), Loader=yaml.BaseLoader)
-            content = re.sub(r"""^---\s(.+?)\s---\s*""", "", md, flags=re.S)
-            post["content"] = markdown(content)
-            return post
-        return {"content": markdown(md)}
+        parsed = markdown(md)
+        post = parsed.metadata or {}
+        post['content'] = parsed
+        return post
 
     def post_json(self, json_):
         """`json`파일을 게시글로 작성합니다."""
