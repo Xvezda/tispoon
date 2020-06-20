@@ -17,5 +17,5 @@ from .core import (
     COMMENT_PUBLIC,
     TispoonError,
     Tispoon,
-    main
+    main,
 )
