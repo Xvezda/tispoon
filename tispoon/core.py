@@ -874,7 +874,7 @@ def comment_command(args):
     for post_id in args.post_ids:
         if args.delete:
             client.comment_delete(post_id, args.comment_id)
-            print('deleted: %d' % args.comment_id)
+            print("deleted: %d" % args.comment_id)
             return
 
         if args.content:
