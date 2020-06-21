@@ -49,7 +49,7 @@ tispoon info
 
 ```sh
 # 마크다운 파일로 블로그 포스팅하기
-cat << EOD > test.md
+cat <<EOD > test.md
 ---
 title: 테스트
 visibility: 3
