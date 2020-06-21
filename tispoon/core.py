@@ -992,7 +992,10 @@ def main():
         help="댓글을 작성할 포스트의 아이디."
     )
     comment_parser.add_argument(
-        "content", type=str, help="댓글의 내용. 설정하지 않으면 stdin으로 부터 읽어옵니다."
+        "content",
+        nargs='?',
+        type=str,
+        help="댓글의 내용. 설정하지 않으면 stdin으로 부터 읽어옵니다.",
     )
     comment_parser.set_defaults(func=comment_command)
 
