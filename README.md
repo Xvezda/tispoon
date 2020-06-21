@@ -39,6 +39,29 @@ optional arguments:
   --version, -V         show program's version number and exit
 ```
 
+블로그 정보
+
+```sh
+tispoon info
+```
+
+게시글 작성
+
+```sh
+# 마크다운 파일로 블로그 포스팅하기
+cat << EOD > test.md
+---
+title: 테스트
+visibility: 3
+slogan: /안녕하세요
+---
+
+테스트 게시글 입니다. :)
+EOD
+
+tispoon post test.md
+```
+
 # Copyright
 
 [MIT License](LICENSE)
