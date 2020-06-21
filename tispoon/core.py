@@ -871,48 +871,56 @@ def category_command(args):
 
 def comment_command(args):
     client = Tispoon(args)
-    for post_id in args.post_ids:
-        if args.delete:
-            client.comment_delete(post_id, args.comment_id)
-            print("삭제완료: %d" % args.comment_id)
-            return
+    if args.delete:
+        client.comment_delete(args.post_id, args.comment_id)
+        print("삭제완료: %d" % args.comment_id)
+        return
 
-        if args.content:
-            url = client.comment_write(post_id, {"content": args.content})
-            print("url: %s" % url)
+    if args.list:
+        if args.new:
+            func = client.comment_newest
+        else:
+            func = client.comment_list
 
-        if args.list:
-            if args.new:
-                func = client.comment_newest
-            else:
-                func = client.comment_list
-
-            comments = func(post_id)
-            for comment in comments:
-                print(
-                    textwrap.dedent(
-                        """\
-                    - id: %s 
-                      name: %s
-                      comment: %s"""
-                        % (
-                            comment.get("id"),
-                            comment.get("name"),
-                            comment.get("comment"),
-                        )
+        comments = func(args.post_id)
+        for comment in comments:
+            print(
+                textwrap.dedent(
+                    """\
+                - id: %s
+                    name: %s
+                    comment: %s"""
+                    % (
+                        comment.get("id"),
+                        comment.get("name"),
+                        comment.get("comment"),
                     )
                 )
+            )
+        return
+    if args.content:
+        content = args.content
+    else:
+        content = sys.stdin.read()
+    url = client.comment_write(args.post_id, {"content": content})
+    print("url: %s" % url)
 
 
 def main():
     import argparse  # noqa
 
     common_parser = argparse.ArgumentParser(add_help=False)
-    common_parser.add_argument("--token", "-t", help='인증 토큰을 설정합니다.')
-    common_parser.add_argument("--client-id", "-u", help="Open API의 client id값을 설정합니다.")
-    common_parser.add_argument("--client-secret", "-p", help="Open API의 client secret값을 설정합니다.")
+    common_parser.add_argument("--token", "-t", help="인증 토큰을 설정합니다.")
     common_parser.add_argument(
-        "--blog", "-b", help="블로그 이름을 설정합니다. 예) `xvezda.tistory.com` 의 경우 `xvezda`"
+        "--client-id", "-u", help="Open API의 client id값을 설정합니다."
+    )
+    common_parser.add_argument(
+        "--client-secret", "-p", help="Open API의 client secret값을 설정합니다."
+    )
+    common_parser.add_argument(
+        "--blog",
+        "-b",
+        help="블로그 이름을 설정합니다. 예) `xvezda.tistory.com` 의 경우 `xvezda`",
     )
     common_parser.add_argument("--verbose", "-v", action="count", default=0)
     common_parser.add_argument(
@@ -922,7 +930,9 @@ def main():
     parser = argparse.ArgumentParser(parents=[common_parser])
     subparsers = parser.add_subparsers(dest="command")
 
-    info_parser = subparsers.add_parser("info", parents=[common_parser], help="자신의 블로그 정보를 가져오는 API 입니다.")
+    info_parser = subparsers.add_parser(
+        "info", parents=[common_parser], help="자신의 블로그 정보를 가져오는 API 입니다."
+    )
     info_parser.set_defaults(func=info_command)
 
     post_parser = subparsers.add_parser("post", parents=[common_parser])
@@ -934,13 +944,10 @@ def main():
         "-f",
         action="append",
         help="마크다운 또는 JSON 파일의 경로를 설정합니다. "
-             "`-` 으로 설정하여 stdin으로 부터 읽어올 수 있습니다.",
+        "`-` 으로 설정하여 stdin으로 부터 읽어올 수 있습니다.",
     )
     post_parser.add_argument(
-        "--demo",
-        "-D",
-        action="store_true",
-        help="블로그에 데모 포스팅을 작성합니다.",
+        "--demo", "-D", action="store_true", help="블로그에 데모 포스팅을 작성합니다.",
     )
     post_parser.add_argument("files", nargs="*")
     post_parser.set_defaults(func=post_command)
@@ -948,20 +955,45 @@ def main():
     category_parser = subparsers.add_parser(
         "category", parents=[common_parser]
     )
-    category_parser.add_argument("--name", "-n", action="append", default=[], help="카테고리 이름")
-    category_parser.add_argument("--label", "-l", action="append", default=[], help="카테고리 라벨")
-    category_parser.add_argument("--id", "-i", action="append", default=[], help="카테고리 아이디")
-    category_parser.add_argument("--parent", "-m", action="append", default=[], help="부모 카테고리 아이디")
+    category_parser.add_argument(
+        "--name", "-n", action="append", default=[], help="카테고리 이름"
+    )
+    category_parser.add_argument(
+        "--label", "-l", action="append", default=[], help="카테고리 라벨"
+    )
+    category_parser.add_argument(
+        "--id", "-i", action="append", default=[], help="카테고리 아이디"
+    )
+    category_parser.add_argument(
+        "--parent", "-m", action="append", default=[], help="부모 카테고리 아이디"
+    )
     category_parser.set_defaults(func=category_command)
 
     comment_parser = subparsers.add_parser("comment", parents=[common_parser])
-    comment_parser.add_argument("--list", "-l", action="store_true", help="댓글 목록을 가져옵니다.")
-    comment_parser.add_argument("--new", "-n", action="store_true", help="최근 댓글 목록을 가져옵니다.")
-    comment_parser.add_argument("--delete", "-d", action="store_true", help="댓글을 삭제합니다.")
-    comment_parser.add_argument("--content", "-c", type=str, help="댓글의 내용")
-    comment_parser.add_argument("--parent-id", "-m", type=str, help="대댓글을 작성할 댓글의 아이디")
-    comment_parser.add_argument("--comment-id", "-i", type=str, help="댓글의 아이디")
-    comment_parser.add_argument("post_ids", nargs="+")
+    comment_parser.add_argument(
+        "--list", "-l", action="store_true", help="댓글 목록을 가져옵니다."
+    )
+    comment_parser.add_argument(
+        "--new", "-n", action="store_true", help="최근 댓글 목록을 가져옵니다."
+    )
+    comment_parser.add_argument(
+        "--delete", "-d", action="store_true", help="댓글을 삭제합니다."
+    )
+    comment_parser.add_argument(
+        "--parent-id", "-m", type=str, help="대댓글을 작성할 댓글의 아이디."
+    )
+    comment_parser.add_argument(
+        "--comment-id", "-i", type=str, help="댓글의 아이디."
+    )
+    comment_parser.add_argument(
+        "--post-id", "-a",
+        required=True,
+        type=str,
+        help="댓글을 작성할 포스트의 아이디."
+    )
+    comment_parser.add_argument(
+        "content", type=str, help="댓글의 내용. 설정하지 않으면 stdin으로 부터 읽어옵니다."
+    )
     comment_parser.set_defaults(func=comment_command)
 
     args = parser.parse_args()
