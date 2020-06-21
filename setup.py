@@ -8,10 +8,8 @@ from setuptools import setup, find_packages
 
 PKG_NAME = "tispoon"
 
-import six
-
 with open(path.join(PKG_NAME, "version.py")) as f:
-    six.exec_(f.read())
+    exec(f.read())
 
 
 here = path.abspath(path.dirname(__file__))
