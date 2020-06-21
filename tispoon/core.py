@@ -120,10 +120,19 @@ int main(void)
 """
 
 
-def dotget(obj, name):
-    """`.`으로 연결된 객체접근 표현식을 parsing, 반복하여 반환하는 유틸리티 함수입니다."""
+def dotget(obj, expr, optional=False):
+    """`.`으로 연결된 객체접근 표현식을 parsing, 반복하여 반환하는 유틸리티 함수입니다.
+
+    Args:
+        expr (str): 문자열 형태의 연속된 객체접근 표현식입니다.
+        optional (bool, optional): 자바스크립트의 `optional chaining`과 같이,
+            해당 속성이 객체에 존재하지 않을 경우에도 에러를 발생시키지 않습니다.
+
+    Returns:
+        `eval(expr)`을 실행한 것과 같은 결과를 보여줍니다.
+    """
     context = obj
-    for token in name.split("."):
+    for token in expr.split("."):
         context = context.get(token)
     return context
 
@@ -146,7 +155,12 @@ class BaseCache(object):
         self.items = {}
 
     def set(self, name, value):
-        """값을 `CacheItem` 클래스를 사용하여 캐싱합니다."""
+        """값을 `CacheItem` 클래스를 사용하여 캐싱합니다.
+
+        Args:
+            name (str): 문자열로 이루어진 값의 임의 이름입니다.
+            value: 저장할 값의 객체입니다.
+        """
         self.items[self.hashing(name)] = CacheItem(value)
 
     def get(self, name, fallback=None):
@@ -154,6 +168,14 @@ class BaseCache(object):
 
         `fallback` 콜백함수가 정의된 경우 캐시된 객체가 없거나, 캐시 유효기간(TTL)이 만료된 경우
         `name`을 인자로 호출하여 반환된 값을 캐싱하고, 반환합니다.
+
+        Args:
+            name (str): 문자열로 이루어진 저장된 값의 이름입니다.
+            fallback: 캐싱된 내용을 찾을 수 없는 경우 호출될 콜백 함수 입니다.
+                첫번째 인자로 `name`인자가 넘어갑니다.
+
+        Returns:
+            저장된 객체를 돌려줍니다.
         """
         item = self.items.get(self.hashing(name))
         if not item:
@@ -314,6 +336,7 @@ class Tispoon(TispoonBase):
 
     @property
     def token(self):
+        """토큰 문자열을 반환합니다."""
         return self._token
 
     @token.setter
@@ -344,7 +367,18 @@ class Tispoon(TispoonBase):
         self._cache = value
 
     def assemble_url(self, path, output="json", **kwargs):
-        """`kwargs`를 URL parameter 형식으로 변환하여 API 요청에 적합하도록 조립하는 함수입니다."""
+        """`kwargs`를 URL parameter 형식으로 변환하여 API 요청에 적합하도록 조립하는 함수입니다.
+
+        Args:
+            path (str): 문자열로 이루어진 URL 경로입니다.
+            output (str): 응답형식을 지정하며 생략가능합니다.
+                생략할 경우 요청헤더의 `Content-Type`을 보고 응답형식을 결정하며 기본 값은 `xml`입니다.
+            kwargs (dict): URL parameter로 변환 될 객체입니다.
+                `key=value, key2=value2` 형태의 인자가 `?key=value&key2=value2`처럼 변환됩니다.
+        
+        Returns:
+            str: 조립된 URL 문자열을 반환합니다.
+        """
         ret = "%s/apis/%s?access_token=%s&output=%s" % (
             BASE_URL,
             path,
@@ -358,6 +392,11 @@ class Tispoon(TispoonBase):
         return ret
 
     def blog_info(self):
+        """계정에 존재하는 모든 블로그 목록 정보를 반환합니다.
+
+        Returns:
+            list: 블로그 목록
+        """
         url = self.assemble_url("blog/info")
         if self.cache:
             r = self.cache.get(url, requests.get)
@@ -374,17 +413,17 @@ class Tispoon(TispoonBase):
                 raise TispoonError(
                     dotget(res, "tistory.error_message") or "예상치 못한 오류"
                 )
-        return res.get("tistory").get("item").get("blogs")
+        return dotget(res, "tistory.item.blogs")
 
     def default_blog(self):
-        """운영 블로그 목록에서 가져온 대표(기본) 블로그."""
+        """운영 블로그 목록에서 가져온 대표(기본) 블로그 정보를 반환합니다."""
         blogs = self.blog_info()
         blog = iter(filter(lambda x: x.get("default") == "Y", blogs))
         return six.next(blog)
 
     @property
     def blogs(self):
-        """운영 블로그 목록."""
+        """운영 블로그 목록을 반환합니다. `blog_info` 메서드의 줄임 표현 입니다."""
         return self.blog_info()
 
     def _post_list(self, page=1, blog_name=None):
@@ -412,14 +451,25 @@ class Tispoon(TispoonBase):
         return res
 
     def post_list(self, page=1):
-        """글 목록을 가져옵니다."""
+        """글 목록을 가져옵니다.
+
+        Args:
+            page (int): 페이지를 지정합니다.
+
+        Returns:
+            list: 글 목록입니다.
+        """
         return dotget(
             self._post_list(blog_name=self.blog, page=page),
             "tistory.item.posts",
         )
 
     def post_count(self):
-        """작성된 글의 갯수를 가져옵니다."""
+        """작성된 글의 갯수를 가져옵니다.
+
+        Returns:
+            int: 작성된 글의 갯수
+        """
         return int(
             dotget(
                 self._post_list(blog_name=self.blog), "tistory.item.totalCount"
@@ -428,7 +478,11 @@ class Tispoon(TispoonBase):
 
     @property
     def posts(self):
-        """작성된 게시글의 목록을 제너레이터로 반환합니다."""
+        """작성된 게시글의 목록을 제너레이터로 반환합니다.
+
+        Yields:
+            게시글의 정보를 반환합니다.
+        """
         posts = []
         count = 0
         page = 0
@@ -442,6 +496,7 @@ class Tispoon(TispoonBase):
             yield posts.pop(0)
 
     def find_post(self, title=None, slogan=None):
+        """지정된 속성과 일치하는 게시글을 찾아서 반환합니다."""
         for post in self.posts:
             if slogan:
 
@@ -461,6 +516,7 @@ class Tispoon(TispoonBase):
         return None
 
     def find_posts(self, title=None, slogan=None):
+        """지정된 속성과 일치하는 게시글의 목록을 반환합니다."""
         post_list = list(self.posts)
         results = []
         # TODO: Implement all features
@@ -823,6 +879,7 @@ class Tispoon(TispoonBase):
 
 
 def info_command(args):
+    """블로그 정보 API를 관리하는 명령어 함수 입니다."""
     client = Tispoon(args)
     for blog in client.blogs:
         print(
@@ -837,6 +894,7 @@ def info_command(args):
 
 
 def post_command(args):
+    """블로그 글을 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     files = args.file or [] + args.files
     if args.list:
@@ -856,6 +914,7 @@ def post_command(args):
 
 
 def category_command(args):
+    """카테고리를 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     categories = client.find_categories(name=args.name, label=args.label)
     for category in categories:
@@ -870,6 +929,7 @@ def category_command(args):
 
 
 def comment_command(args):
+    """블로그 댓글을 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     if args.delete:
         client.comment_delete(args.post_id, args.comment_id)
@@ -922,7 +982,13 @@ def main():
         "-b",
         help="블로그 이름을 설정합니다. 예) `xvezda.tistory.com` 의 경우 `xvezda`",
     )
-    common_parser.add_argument("--verbose", "-v", action="count", default=0)
+    common_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="count",
+        default=0,
+        help="로그의 정보량을 설정합니다. `v`의 갯수에 따라 정보량이 달라집니다.",
+    )
     common_parser.add_argument(
         "--version", "-V", action="version", version=VERSION
     )
@@ -935,7 +1001,9 @@ def main():
     )
     info_parser.set_defaults(func=info_command)
 
-    post_parser = subparsers.add_parser("post", parents=[common_parser])
+    post_parser = subparsers.add_parser(
+        "post", parents=[common_parser], help="블로그 글을 관리하는 API 입니다."
+    )
     post_parser.add_argument("--list", "-l", action="store_true")
     # NOTE: Tistory API v1 does not support deleting post.. WHAT?
     # post_parser.add_argument("--delete", "-d", action="store_true")
@@ -953,7 +1021,7 @@ def main():
     post_parser.set_defaults(func=post_command)
 
     category_parser = subparsers.add_parser(
-        "category", parents=[common_parser]
+        "category", parents=[common_parser], help="블로그 카테고리를 정보를 가져오는 API 입니다."
     )
     category_parser.add_argument(
         "--name", "-n", action="append", default=[], help="카테고리 이름"
@@ -969,7 +1037,9 @@ def main():
     )
     category_parser.set_defaults(func=category_command)
 
-    comment_parser = subparsers.add_parser("comment", parents=[common_parser])
+    comment_parser = subparsers.add_parser(
+        "comment", parents=[common_parser], help="블로그 댓글을 관리하는 API 입니다."
+    )
     comment_parser.add_argument(
         "--list", "-l", action="store_true", help="댓글 목록을 가져옵니다."
     )
@@ -986,14 +1056,11 @@ def main():
         "--comment-id", "-i", type=str, help="댓글의 아이디."
     )
     comment_parser.add_argument(
-        "--post-id", "-a",
-        required=True,
-        type=str,
-        help="댓글을 작성할 포스트의 아이디."
+        "--post-id", "-a", required=True, type=str, help="댓글을 작성할 포스트의 아이디."
     )
     comment_parser.add_argument(
         "content",
-        nargs='?',
+        nargs="?",
         type=str,
         help="댓글의 내용. 설정하지 않으면 stdin으로 부터 읽어옵니다.",
     )
@@ -1022,6 +1089,7 @@ def main():
         args.func(args)
     except Exception as err:
         if args.verbose > 0:
+            # 오류 발생시 로그의 정보량 단계가 지정된 경우 콜스택 정보를 보여줍니다.
             print(traceback.format_exc(), file=sys.stderr)
         parser.error(u(err))
         parser.print_help()
