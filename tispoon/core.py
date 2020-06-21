@@ -511,7 +511,7 @@ class Tispoon(TispoonBase):
                     post.get("postUrl", "").replace("-", "")
                 )
                 clean_slogan = remove_prefix(slogan)
-                if simplified_url.startswith(quote(clean_slogan)):
+                if simplified_url.startswith(quote(u(clean_slogan))):
                     logger.debug("포스팅 발견! -> %s" % post.get("title"))
                     return post
             elif title:
