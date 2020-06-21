@@ -702,7 +702,8 @@ class Tispoon(TispoonBase):
                 logger.info("동일한 포스팅 발견")
                 logger.info(" " * 2 + "- id: %s" % founded.get("id"))
                 logger.info(" " * 2 + "- title: %s" % founded.get("title"))
-                post_id = founded.get("id")
+                if not post_id:
+                    post_id = founded.get("id")
             logger.info("포스팅 업데이트 중...")
             return self.post_modify(post_id, post)
         return self.post_write(post)
