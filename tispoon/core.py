@@ -379,7 +379,7 @@ class Tispoon(TispoonBase):
                 생략할 경우 요청헤더의 `Content-Type`을 보고 응답형식을 결정하며 기본 값은 `xml`입니다.
             kwargs (dict): URL parameter로 변환 될 객체입니다.
                 `key=value, key2=value2` 형태의 인자가 `?key=value&key2=value2`처럼 변환됩니다.
-        
+
         Returns:
             str: 조립된 URL 문자열을 반환합니다.
         """
@@ -507,13 +507,24 @@ class Tispoon(TispoonBase):
                 def remove_prefix(url):
                     return re.sub(r"^(\.{0,2}\/)*", "", url)
 
-                simplified_url = remove_prefix(
-                    post.get("postUrl", "").replace("-", "")
-                )
+                post_url = post.get("postUrl")
+                logger.debug("post url: %s" % post_url)
+                if not post_url:
+                    raise TispoonError("예상치 못한 오류 발생")
+
+                post_path = urlparse(post_url).path
+                if not post_path:
+                    raise TispoonError("예상치 못한 오류 발생")
+
+                post_slogan = re.sub(r"^/?entry/", "", post_path)
+                simplified_slogan = remove_prefix(post_slogan.replace("-", ""))
+                logger.debug("simplified slogan: %s" % simplified_slogan)
+
                 clean_slogan = remove_prefix(slogan)
-                if simplified_url.startswith(quote(u(clean_slogan))):
-                    logger.debug("포스팅 발견! -> %s" % post.get("title"))
+                if simplified_slogan.startswith(quote(u(clean_slogan))):
+                    logger.debug("포스팅 발견! -> %s" % u(post.get("title")))
                     return post
+
             elif title:
                 if post.get("title") == title:
                     return post
@@ -675,11 +686,15 @@ class Tispoon(TispoonBase):
         return self.post_write(self.json_to_post(json_))
 
     def post_markdown(self, md):
-        """`markdown`파일을 게시글로 작성합니다."""
+        """`markdown`파일을 게시글로 작성합니다.
+
+        다음과 같은 경우에 게시글을 새로 작성하기 보다 업데이트 합니다.
+          - 만약 포스팅 아이디가 게시글의 메타데이터에 존재하는 경우
+          - 만약 같은 포스팅 URL(Slogan)이 게시글에 존재하는 경우
+        """
+        logger.debug("마크다운 파일을 포스팅합니다.")
+
         post = self.markdown_to_post(md)
-        # 다음과 같은 경우에 게시글을 새로 작성하기 보다 업데이트 합니다.
-        #  - 만약 포스팅 아이디가 게시글의 메타데이터에 존재하는 경우
-        #  - 만약 같은 포스팅 URL(Slogan)이 게시글에 존재하는 경우
         post_id = post.get("id") or post.get("postId")
         founded = self.find_post(slogan=post.get("slogan"))
         if post_id or founded:
@@ -687,6 +702,7 @@ class Tispoon(TispoonBase):
                 logger.info("동일한 포스팅 발견")
                 logger.info(" " * 2 + "- id: %s" % founded.get("id"))
                 logger.info(" " * 2 + "- title: %s" % founded.get("title"))
+                post_id = founded.get("id")
             logger.info("포스팅 업데이트 중...")
             return self.post_modify(post_id, post)
         return self.post_write(post)
