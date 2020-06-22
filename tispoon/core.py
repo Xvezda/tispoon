@@ -1040,7 +1040,11 @@ def main():
         help="로그의 정보량을 설정합니다. `v`의 갯수에 따라 정보량이 달라집니다.",
     )
     common_parser.add_argument(
-        "--version", "-V", action="version", version=VERSION
+        "--version",
+        "-V",
+        action="version",
+        version=VERSION,
+        help="버전 정보를 출력하고 종료합니다.",
     )
 
     parser = argparse.ArgumentParser(parents=[common_parser])
