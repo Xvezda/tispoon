@@ -29,10 +29,6 @@ import logging
 
 # Third party modules
 import requests
-import six
-from six.moves.urllib.parse import quote as _quote
-from six.moves.urllib.parse import unquote as _unquote
-from six.moves.urllib.parse import urlparse
 from markdown2 import markdown as _markdown
 
 # Get version info
@@ -41,26 +37,36 @@ from .version import VERSION
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
-
 # Version compatible helpers
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+
+if PY2:
+    from urllib import quote as _quote
+    from urllib import unquote as _unquote  # noqa
+    from urllib2.urlparse import urlparse  # noqa
+else:
+    from urllib.parse import quote as _quote
+    from urllib.parse import unquote as _unquote
+    from urllib.parse import urlparse
+
+
 def u(text):
-    if six.PY2:
+    if PY2:
         return unicode(str(text)).encode("utf-8")  # noqa
     return str(text)
 
 
 def quote(url):
-    if six.PY3:
+    if PY3:
         return _quote(bytes(str(url), encoding="utf-8"))
     return _quote(str(url))
 
 
 def unquote(url):
-    if six.PY3:
+    if PY3:
         return _unquote(str(url), encoding="utf-8")
-    from six.moves.urllib.parse import unquote_to_bytes  # noqa
-
-    return unquote_to_bytes(u(url)).decode("utf-8")
+    return _unquote(u(url)).decode("utf-8")
 
 
 def markdown(*args, **kwargs):
@@ -442,7 +448,7 @@ class Tispoon(TispoonBase):
         """운영 블로그 목록에서 가져온 대표(기본) 블로그 정보를 반환합니다."""
         blogs = self.blog_info()
         blog = iter(filter(lambda x: x.get("default") == "Y", blogs))
-        return six.next(blog)
+        return next(blog)
 
     @property
     def blogs(self):

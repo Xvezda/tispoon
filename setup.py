@@ -46,6 +46,6 @@ setup(
     """,
     keywords="blog blogging openapi korean tistory library",
     packages=find_packages(),
-    install_requires=["requests", "markdown2", "six"],
+    install_requires=["requests", "markdown2"],
     zip_safe=False,
 )
