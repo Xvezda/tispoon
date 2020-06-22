@@ -27,11 +27,13 @@ import textwrap
 import traceback
 import logging
 
+# Third party modules
 import requests
 import six
 from six.moves.urllib.parse import quote, urlparse
 from markdown2 import markdown as _markdown
 
+# Get version info
 from .version import VERSION
 
 logger = logging.getLogger(__name__)
