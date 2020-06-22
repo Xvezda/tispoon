@@ -917,7 +917,7 @@ class Tispoon(TispoonBase):
         return True
 
 
-def info_command(args):
+def _info_command(args):
     """블로그 정보 API를 관리하는 명령어 함수 입니다."""
     client = Tispoon(args)
     for blog in client.blogs:
@@ -932,7 +932,7 @@ def info_command(args):
         )
 
 
-def post_command(args):
+def _post_command(args):
     """블로그 글을 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     files = args.file or [] + args.files
@@ -962,7 +962,7 @@ def post_command(args):
         client.post_file_path(file_path)
 
 
-def category_command(args):
+def _category_command(args):
     """카테고리를 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     categories = client.find_categories(name=args.name, label=args.label)
@@ -977,7 +977,7 @@ def category_command(args):
         )
 
 
-def comment_command(args):
+def _comment_command(args):
     """블로그 댓글을 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     if args.delete:
@@ -1048,7 +1048,7 @@ def main():
     info_parser = subparsers.add_parser(
         "info", parents=[common_parser], help="자신의 블로그 정보를 가져오는 API 입니다."
     )
-    info_parser.set_defaults(func=info_command)
+    info_parser.set_defaults(func=_info_command)
 
     post_parser = subparsers.add_parser(
         "post", parents=[common_parser], help="블로그 글을 관리하는 API 입니다."
@@ -1075,7 +1075,7 @@ def main():
         "--demo", "-D", action="store_true", help="블로그에 데모 포스팅을 작성합니다.",
     )
     post_parser.add_argument("files", nargs="*")
-    post_parser.set_defaults(func=post_command)
+    post_parser.set_defaults(func=_post_command)
 
     category_parser = subparsers.add_parser(
         "category", parents=[common_parser], help="블로그 카테고리를 정보를 가져오는 API 입니다."
@@ -1092,7 +1092,7 @@ def main():
     category_parser.add_argument(
         "--parent", "-m", action="append", default=[], help="부모 카테고리 아이디"
     )
-    category_parser.set_defaults(func=category_command)
+    category_parser.set_defaults(func=_category_command)
 
     comment_parser = subparsers.add_parser(
         "comment", parents=[common_parser], help="블로그 댓글을 관리하는 API 입니다."
@@ -1121,7 +1121,7 @@ def main():
         type=str,
         help="댓글의 내용. 설정하지 않으면 stdin으로 부터 읽어옵니다.",
     )
-    comment_parser.set_defaults(func=comment_command)
+    comment_parser.set_defaults(func=_comment_command)
 
     args = parser.parse_args()
 
