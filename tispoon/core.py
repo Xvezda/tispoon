@@ -44,7 +44,7 @@ PY3 = sys.version_info[0] == 3
 if PY2:
     from urllib import quote as _quote
     from urllib import unquote as _unquote  # noqa
-    from urllib2.urlparse import urlparse  # noqa
+    from urlparse import urlparse  # noqa
 else:
     from urllib.parse import quote as _quote
     from urllib.parse import unquote as _unquote
