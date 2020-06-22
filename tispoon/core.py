@@ -51,8 +51,8 @@ def u(text):
 
 def quote(url):
     if six.PY3:
-        return quote_(bytes(url, encoding='utf-8'))
-    return quote_(url)
+        return quote_(bytes(str(url), encoding='utf-8'))
+    return quote_(str(url))
 
 
 def unquote(url):
