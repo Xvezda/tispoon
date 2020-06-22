@@ -30,8 +30,8 @@ import logging
 # Third party modules
 import requests
 import six
-from six.moves.urllib.parse import quote as quote_
-from six.moves.urllib.parse import unquote as unquote_
+from six.moves.urllib.parse import quote as _quote
+from six.moves.urllib.parse import unquote as _unquote
 from six.moves.urllib.parse import urlparse
 from markdown2 import markdown as _markdown
 
@@ -51,13 +51,13 @@ def u(text):
 
 def quote(url):
     if six.PY3:
-        return quote_(bytes(str(url), encoding="utf-8"))
-    return quote_(str(url))
+        return _quote(bytes(str(url), encoding="utf-8"))
+    return _quote(str(url))
 
 
 def unquote(url):
     if six.PY3:
-        return unquote_(str(url), encoding="utf-8")
+        return _unquote(str(url), encoding="utf-8")
     from six.moves.urllib.parse import unquote_to_bytes  # noqa
 
     return unquote_to_bytes(u(url)).decode("utf-8")
