@@ -30,7 +30,9 @@ import logging
 # Third party modules
 import requests
 import six
-from six.moves.urllib.parse import quote, urlparse
+from six.moves.urllib.parse import quote as quote_
+from six.moves.urllib.parse import unquote as unquote_
+from six.moves.urllib.parse import urlparse
 from markdown2 import markdown as _markdown
 
 # Get version info
@@ -40,10 +42,24 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 
+# Version compatible helpers
 def u(text):
-    if sys.version_info[0] < 3:
-        return unicode(text).encode("utf-8")  # noqa
-    return text
+    if six.PY2:
+        return unicode(str(text)).encode("utf-8")  # noqa
+    return str(text)
+
+
+def quote(url):
+    if six.PY3:
+        return quote_(bytes(url, encoding='utf-8'))
+    return quote_(url)
+
+
+def unquote(url):
+    if six.PY3:
+        return unquote_(str(url), encoding='utf-8')
+    from six.moves.urllib.parse import unquote_to_bytes
+    return unquote_to_bytes(u(url)).decode('utf-8')
 
 
 def markdown(*args, **kwargs):
@@ -920,6 +936,12 @@ def post_command(args):
     """블로그 글을 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     files = args.file or [] + args.files
+
+    def transform(url):
+        if not args.encode_url:
+            return unquote(url)
+        return url
+
     if args.list:
         for post in client.posts:
             print(
@@ -928,7 +950,11 @@ def post_command(args):
                     - title: %s
                       id: %s
                       url: %s"""
-                    % (post.get("title"), post.get("id"), post.get("postUrl"))
+                    % (
+                        post.get("title"),
+                        post.get("id"),
+                        transform(post.get("postUrl")),
+                    )
                 )
             )
         return
@@ -1027,7 +1053,15 @@ def main():
     post_parser = subparsers.add_parser(
         "post", parents=[common_parser], help="블로그 글을 관리하는 API 입니다."
     )
-    post_parser.add_argument("--list", "-l", action="store_true")
+    post_parser.add_argument(
+        "--list", "-l", action="store_true", help="포스트 목록을 가져옵니다."
+    )
+    post_parser.add_argument(
+        "--encode-url",
+        "-e",
+        action="store_true",
+        help="포스트 주소를 URL 인코딩 형태로 보여줍니다.",
+    )
     # NOTE: Tistory API v1 does not support deleting post.. WHAT?
     # post_parser.add_argument("--delete", "-d", action="store_true")
     post_parser.add_argument(
