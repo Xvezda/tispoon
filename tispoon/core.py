@@ -1124,7 +1124,7 @@ def main():
         "--comment-id", "-i", type=str, help="댓글의 아이디."
     )
     comment_parser.add_argument(
-        "--post-id", "-a", required=True, type=str, help="댓글을 작성할 포스트의 아이디."
+        "--post-id", "-A", required=True, type=str, help="댓글을 작성할 포스트의 아이디."
     )
     comment_parser.add_argument(
         "content",
