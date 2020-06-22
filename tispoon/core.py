@@ -51,15 +51,16 @@ def u(text):
 
 def quote(url):
     if six.PY3:
-        return quote_(bytes(str(url), encoding='utf-8'))
+        return quote_(bytes(str(url), encoding="utf-8"))
     return quote_(str(url))
 
 
 def unquote(url):
     if six.PY3:
-        return unquote_(str(url), encoding='utf-8')
-    from six.moves.urllib.parse import unquote_to_bytes
-    return unquote_to_bytes(u(url)).decode('utf-8')
+        return unquote_(str(url), encoding="utf-8")
+    from six.moves.urllib.parse import unquote_to_bytes  # noqa
+
+    return unquote_to_bytes(u(url)).decode("utf-8")
 
 
 def markdown(*args, **kwargs):
@@ -400,7 +401,7 @@ class Tispoon(TispoonBase):
 
         Returns:
             str: 조립된 URL 문자열을 반환합니다.
-        """
+        """  # noqa
         ret = "%s/apis/%s?access_token=%s&output=%s" % (
             BASE_URL,
             path,
