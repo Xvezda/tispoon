@@ -32,7 +32,7 @@ import requests
 from markdown2 import markdown as _markdown
 
 # Get version info
-from .version import VERSION
+from .__version__ import __version__
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
@@ -1164,7 +1164,7 @@ def main():
         "--version",
         "-V",
         action="version",
-        version=VERSION,
+        version=__version__,
         help="버전 정보를 출력하고 종료합니다.",
     )
 
