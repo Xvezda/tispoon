@@ -101,9 +101,10 @@ TTL_DEF = int(os.getenv("TISPOON_TTL", 600))
 TTL_INF = -1
 
 # Tistory OpenAPI에 정의된 게시글 공개 범위 상수 입니다.
-VISIBILITY_PRIVATE = 0
-VISIBILITY_PROTECTED = 1
-VISIBILITY_PUBLISHED = 3
+VISIBILITY_PRIVATE = (0,)
+# 글 목록에 사용되는 게시글 공개 범위 상수값이 작성시의 값과 다름
+VISIBILITY_PROTECTED = (1, 15)
+VISIBILITY_PUBLISHED = (3, 20)
 
 COMMENT_ACCEPT = 0
 COMMENT_CLOSED = 1
@@ -707,6 +708,14 @@ class Tispoon(TispoonBase):
         post["content"] = parsed
         return post
 
+    def post_url_to_slogan(self, post_url):
+        """포스트 주소에서 slogan을 추출하여 변환, 반환합니다."""
+        unquoted_url = unquote(post_url)
+        slogan_match = re.match(r"https?\:\/\/.+\/entry\/(.+)", unquoted_url)
+        if slogan_match:
+            return slogan_match.group(1)
+        return ""
+
     def post_json(self, json_):
         """`json`파일을 게시글로 작성합니다."""
         return self.post_write(self.json_to_post(json_))
@@ -954,10 +963,14 @@ def _info_command(args):
             print("  content: |")
             print("\n".join(map(lambda l: " " * 4 + l, content.split("\n"))))
             # tags
-            tags = post.get("tags", {}).get("tag", [])
+            tags = post.get("tags")
             if tags:
                 print("  tags:")
-                print("\n".join(map(lambda t: " " * 2 + " - " + t, tags)))
+                print(
+                    "\n".join(
+                        map(lambda t: " " * 2 + " - " + t, tags.get("tag"))
+                    )
+                )
 
 
 def _post_command(args):
@@ -1041,6 +1054,87 @@ def _comment_command(args):
         content = sys.stdin.read()
     url = client.comment_write(args.post_id, {"content": content})
     print("url: %s" % url)
+
+
+def _import_command(args):
+    client = Tispoon(args)
+    if args.blog:
+        blog_name = args.blog
+    else:
+        default_blog = client.default_blog()
+        blog_name = default_blog.get("name")
+    # 옵션이 지정되어 있다면 덮어씁니다.
+    if args.output_dir:
+        blog_name = args.output_dir
+    logger.debug(blog_name)
+    try:
+        os.makedirs(blog_name)
+    except OSError:
+        # Re-raise error if exists file is not directory
+        if not os.path.isdir(blog_name):
+            raise
+        pass
+    for post in client.posts:
+        slogan = client.post_url_to_slogan(post.get("postUrl"))
+        if slogan:
+            identifier = slogan
+        else:
+            identifier = post.get("id")
+        file_name = "%s.md" % identifier
+        dest = os.path.join(blog_name, file_name)
+        if os.path.exists(dest):
+            continue
+        print(post.get("title"), "다운로드 중...")
+
+        post_detail = client.post_read(post.get("id"))
+        attributes = post_detail.keys()
+        except_attr = [
+            "categoryId",
+            "content",
+            "comments",
+            "tags",
+            "trackbacks",
+            "url",
+            "visibility",
+            "slogan",
+            "secondaryUrl",
+            "postUrl",
+        ]
+        content = ""
+        if attributes:
+            content += "---\n"
+            # 자동으로 속성추가
+            for attribute in attributes:
+                if attribute in except_attr:
+                    continue
+                content += "%s: %s\n" % (attribute, post_detail.get(attribute))
+            # 수동으로 속성추가
+            logger.debug("post_detail: %r" % post_detail)
+            visibilities = [
+                VISIBILITY_PRIVATE,
+                VISIBILITY_PROTECTED,
+                VISIBILITY_PUBLISHED,
+            ]
+            visibility = post_detail.get("visibility")
+            for values in visibilities:
+                if int(visibility) in values:
+                    post_visibility = values[0]
+                    break
+            else:
+                post_visibility = int(visibility)
+            content += "visibility: %s\n" % post_visibility
+            tags = post_detail.get("tags")
+            if tags:
+                content += "tag: %s\n" % ", ".join(tags.get("tag"))
+            if slogan:
+                content += "slogan: /%s\n" % slogan
+            content += "---\n\n"
+        content += post_detail.get("content")
+        content += "\n"
+        logger.debug("content: %s" % content)
+        with open(dest, "w") as f:
+            f.write(u(content))
+    print("불러오기가 완료되었습니다!")
 
 
 def main():
@@ -1157,6 +1251,16 @@ def main():
         help="댓글의 내용. 설정하지 않으면 stdin으로 부터 읽어옵니다.",
     )
     comment_parser.set_defaults(func=_comment_command)
+
+    import_parser = subparsers.add_parser(
+        "import", parents=[common_parser], help="게시된 게시글을 불러오는 명령어입니다."
+    )
+    import_parser.add_argument(
+        "--output-dir",
+        "-O",
+        help="게시글을 저장할 디렉토리를 설정합니다. " "기본값은 블로그의 이름을 사용합니다.",
+    )
+    import_parser.set_defaults(func=_import_command)
 
     args = parser.parse_args()
 
