@@ -6,6 +6,7 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
-AUTHOR = "Xvezda"
-AUTHOR_EMAIL = "xvezda@naver.com"
-VERSION = "1.0.6"
+__title__ = "tispoon"
+__author__ = "Xvezda"
+__email__ = "xvezda@naver.com"
+__version__ = "1.0.7"

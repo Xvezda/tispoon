@@ -27,21 +27,46 @@ import textwrap
 import traceback
 import logging
 
+# Third party modules
 import requests
-import six
-from six.moves.urllib.parse import quote, urlparse
 from markdown2 import markdown as _markdown
 
+# Get version info
 from .version import VERSION
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
+# Version compatible helpers
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+
+if PY2:
+    from urllib import quote as _quote
+    from urllib import unquote as _unquote  # noqa
+    from urlparse import urlparse  # noqa
+else:
+    from urllib.parse import quote as _quote
+    from urllib.parse import unquote as _unquote
+    from urllib.parse import urlparse
+
 
 def u(text):
-    if sys.version_info[0] < 3:
+    if PY2:
         return unicode(text).encode("utf-8")  # noqa
-    return text
+    return str(text)
+
+
+def quote(url):
+    if PY3:
+        return _quote(bytes(str(url), encoding="utf-8"))
+    return _quote(str(url))
+
+
+def unquote(url):
+    if PY3:
+        return _unquote(str(url), encoding="utf-8")
+    return _unquote(u(url)).decode("utf-8")
 
 
 def markdown(*args, **kwargs):
@@ -76,9 +101,10 @@ TTL_DEF = int(os.getenv("TISPOON_TTL", 600))
 TTL_INF = -1
 
 # Tistory OpenAPI에 정의된 게시글 공개 범위 상수 입니다.
-VISIBILITY_PRIVATE = 0
-VISIBILITY_PROTECTED = 1
-VISIBILITY_PUBLISHED = 3
+VISIBILITY_PRIVATE = (0,)
+# 글 목록에 사용되는 게시글 공개 범위 상수값이 작성시의 값과 다름
+VISIBILITY_PROTECTED = (1, 15)
+VISIBILITY_PUBLISHED = (3, 20)
 
 COMMENT_ACCEPT = 0
 COMMENT_CLOSED = 1
@@ -379,10 +405,10 @@ class Tispoon(TispoonBase):
                 생략할 경우 요청헤더의 `Content-Type`을 보고 응답형식을 결정하며 기본 값은 `xml`입니다.
             kwargs (dict): URL parameter로 변환 될 객체입니다.
                 `key=value, key2=value2` 형태의 인자가 `?key=value&key2=value2`처럼 변환됩니다.
-        
+
         Returns:
             str: 조립된 URL 문자열을 반환합니다.
-        """
+        """  # noqa
         ret = "%s/apis/%s?access_token=%s&output=%s" % (
             BASE_URL,
             path,
@@ -423,7 +449,7 @@ class Tispoon(TispoonBase):
         """운영 블로그 목록에서 가져온 대표(기본) 블로그 정보를 반환합니다."""
         blogs = self.blog_info()
         blog = iter(filter(lambda x: x.get("default") == "Y", blogs))
-        return six.next(blog)
+        return next(blog)
 
     @property
     def blogs(self):
@@ -507,13 +533,24 @@ class Tispoon(TispoonBase):
                 def remove_prefix(url):
                     return re.sub(r"^(\.{0,2}\/)*", "", url)
 
-                simplified_url = remove_prefix(
-                    post.get("postUrl", "").replace("-", "")
-                )
+                post_url = post.get("postUrl")
+                logger.debug("post url: %s" % post_url)
+                if not post_url:
+                    raise TispoonError("예상치 못한 오류 발생")
+
+                post_path = urlparse(post_url).path
+                if not post_path:
+                    raise TispoonError("예상치 못한 오류 발생")
+
+                post_slogan = re.sub(r"^/?entry/", "", post_path)
+                simplified_slogan = remove_prefix(post_slogan.replace("-", ""))
+                logger.debug("simplified slogan: %s" % simplified_slogan)
+
                 clean_slogan = remove_prefix(slogan)
-                if simplified_url.startswith(quote(u(clean_slogan))):
-                    logger.debug("포스팅 발견! -> %s" % post.get("title"))
+                if simplified_slogan.startswith(quote(u(clean_slogan))):
+                    logger.debug("포스팅 발견! -> %s" % u(post.get("title")))
                     return post
+
             elif title:
                 if post.get("title") == title:
                     return post
@@ -545,6 +582,7 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
@@ -670,16 +708,28 @@ class Tispoon(TispoonBase):
         post["content"] = parsed
         return post
 
+    def post_url_to_slogan(self, post_url):
+        """포스트 주소에서 slogan을 추출하여 변환, 반환합니다."""
+        unquoted_url = unquote(post_url)
+        slogan_match = re.match(r"https?\:\/\/.+\/entry\/(.+)", unquoted_url)
+        if slogan_match:
+            return slogan_match.group(1)
+        return ""
+
     def post_json(self, json_):
         """`json`파일을 게시글로 작성합니다."""
         return self.post_write(self.json_to_post(json_))
 
     def post_markdown(self, md):
-        """`markdown`파일을 게시글로 작성합니다."""
+        """`markdown`파일을 게시글로 작성합니다.
+
+        다음과 같은 경우에 게시글을 새로 작성하기 보다 업데이트 합니다.
+          - 만약 포스팅 아이디가 게시글의 메타데이터에 존재하는 경우
+          - 만약 같은 포스팅 URL(Slogan)이 게시글에 존재하는 경우
+        """
+        logger.debug("마크다운 파일을 포스팅합니다.")
+
         post = self.markdown_to_post(md)
-        # 다음과 같은 경우에 게시글을 새로 작성하기 보다 업데이트 합니다.
-        #  - 만약 포스팅 아이디가 게시글의 메타데이터에 존재하는 경우
-        #  - 만약 같은 포스팅 URL(Slogan)이 게시글에 존재하는 경우
         post_id = post.get("id") or post.get("postId")
         founded = self.find_post(slogan=post.get("slogan"))
         if post_id or founded:
@@ -687,6 +737,8 @@ class Tispoon(TispoonBase):
                 logger.info("동일한 포스팅 발견")
                 logger.info(" " * 2 + "- id: %s" % founded.get("id"))
                 logger.info(" " * 2 + "- title: %s" % founded.get("title"))
+                if not post_id:
+                    post_id = founded.get("id")
             logger.info("포스팅 업데이트 중...")
             return self.post_modify(post_id, post)
         return self.post_write(post)
@@ -882,9 +934,10 @@ class Tispoon(TispoonBase):
         return True
 
 
-def info_command(args):
+def _info_command(args):
     """블로그 정보 API를 관리하는 명령어 함수 입니다."""
     client = Tispoon(args)
+    print("blogs:")
     for blog in client.blogs:
         print(
             textwrap.dedent(
@@ -895,12 +948,41 @@ def info_command(args):
                 % (blog.get("name"), blog.get("title"), blog.get("url"))
             )
         )
+    if args.post_id:
+        print("posts:")
+        for post_id in args.post_id:
+            post = client.post_read(post_id)
+            # url
+            print("- url: %s" % post.get("postUrl"))
+            # id
+            print("  id: %s" % post.get("id"))
+            # title
+            print("  title: %s" % post.get("title"))
+            # content
+            content = post.get("content")
+            print("  content: |")
+            print("\n".join(map(lambda l: " " * 4 + l, content.split("\n"))))
+            # tags
+            tags = post.get("tags")
+            if tags:
+                print("  tags:")
+                print(
+                    "\n".join(
+                        map(lambda t: " " * 2 + " - " + t, tags.get("tag"))
+                    )
+                )
 
 
-def post_command(args):
+def _post_command(args):
     """블로그 글을 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     files = args.file or [] + args.files
+
+    def transform(url):
+        if not args.encode_url:
+            return unquote(url)
+        return url
+
     if args.list:
         for post in client.posts:
             print(
@@ -909,7 +991,11 @@ def post_command(args):
                     - title: %s
                       id: %s
                       url: %s"""
-                    % (post.get("title"), post.get("id"), post.get("postUrl"))
+                    % (
+                        post.get("title"),
+                        post.get("id"),
+                        transform(post.get("postUrl")),
+                    )
                 )
             )
         return
@@ -917,7 +1003,7 @@ def post_command(args):
         client.post_file_path(file_path)
 
 
-def category_command(args):
+def _category_command(args):
     """카테고리를 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     categories = client.find_categories(name=args.name, label=args.label)
@@ -932,7 +1018,7 @@ def category_command(args):
         )
 
 
-def comment_command(args):
+def _comment_command(args):
     """블로그 댓글을 관리하는 API의 명령어 함수 입니다."""
     client = Tispoon(args)
     if args.delete:
@@ -952,8 +1038,8 @@ def comment_command(args):
                 textwrap.dedent(
                     """\
                 - id: %s
-                    name: %s
-                    comment: %s"""
+                  name: %s
+                  comment: %s"""
                     % (
                         comment.get("id"),
                         comment.get("name"),
@@ -968,6 +1054,87 @@ def comment_command(args):
         content = sys.stdin.read()
     url = client.comment_write(args.post_id, {"content": content})
     print("url: %s" % url)
+
+
+def _import_command(args):
+    client = Tispoon(args)
+    if args.blog:
+        blog_name = args.blog
+    else:
+        default_blog = client.default_blog()
+        blog_name = default_blog.get("name")
+    # 옵션이 지정되어 있다면 덮어씁니다.
+    if args.output_dir:
+        blog_name = args.output_dir
+    logger.debug(blog_name)
+    try:
+        os.makedirs(blog_name)
+    except OSError:
+        # Re-raise error if exists file is not directory
+        if not os.path.isdir(blog_name):
+            raise
+        pass
+    for post in client.posts:
+        slogan = client.post_url_to_slogan(post.get("postUrl"))
+        if slogan:
+            identifier = slogan
+        else:
+            identifier = post.get("id")
+        file_name = "%s.md" % identifier
+        dest = os.path.join(blog_name, file_name)
+        if os.path.exists(dest):
+            continue
+        print(post.get("title"), "다운로드 중...")
+
+        post_detail = client.post_read(post.get("id"))
+        attributes = post_detail.keys()
+        except_attr = [
+            "categoryId",
+            "content",
+            "comments",
+            "tags",
+            "trackbacks",
+            "url",
+            "visibility",
+            "slogan",
+            "secondaryUrl",
+            "postUrl",
+        ]
+        content = ""
+        if attributes:
+            content += "---\n"
+            # 자동으로 속성추가
+            for attribute in attributes:
+                if attribute in except_attr:
+                    continue
+                content += "%s: %s\n" % (attribute, post_detail.get(attribute))
+            # 수동으로 속성추가
+            logger.debug("post_detail: %r" % post_detail)
+            visibilities = [
+                VISIBILITY_PRIVATE,
+                VISIBILITY_PROTECTED,
+                VISIBILITY_PUBLISHED,
+            ]
+            visibility = post_detail.get("visibility")
+            for values in visibilities:
+                if int(visibility) in values:
+                    post_visibility = values[0]
+                    break
+            else:
+                post_visibility = int(visibility)
+            content += "visibility: %s\n" % post_visibility
+            tags = post_detail.get("tags")
+            if tags:
+                content += "tag: %s\n" % ", ".join(tags.get("tag"))
+            if slogan:
+                content += "slogan: /%s\n" % slogan
+            content += "---\n\n"
+        content += post_detail.get("content")
+        content += "\n"
+        logger.debug("content: %s" % content)
+        with open(dest, "w") as f:
+            f.write(u(content))
+    print("불러오기가 완료되었습니다!")
 
 
 def main():
@@ -994,7 +1161,11 @@ def main():
         help="로그의 정보량을 설정합니다. `v`의 갯수에 따라 정보량이 달라집니다.",
     )
     common_parser.add_argument(
-        "--version", "-V", action="version", version=VERSION
+        "--version",
+        "-V",
+        action="version",
+        version=VERSION,
+        help="버전 정보를 출력하고 종료합니다.",
     )
 
     parser = argparse.ArgumentParser(parents=[common_parser])
@@ -1003,12 +1174,23 @@ def main():
     info_parser = subparsers.add_parser(
         "info", parents=[common_parser], help="자신의 블로그 정보를 가져오는 API 입니다."
     )
-    info_parser.set_defaults(func=info_command)
+    info_parser.add_argument(
+        "--post-id", "-i", action="append", help="정보를 가져올 포스트 아이디를 설정합니다."
+    )
+    info_parser.set_defaults(func=_info_command)
 
     post_parser = subparsers.add_parser(
         "post", parents=[common_parser], help="블로그 글을 관리하는 API 입니다."
     )
-    post_parser.add_argument("--list", "-l", action="store_true")
+    post_parser.add_argument(
+        "--list", "-l", action="store_true", help="포스트 목록을 가져옵니다."
+    )
+    post_parser.add_argument(
+        "--encode-url",
+        "-e",
+        action="store_true",
+        help="포스트 주소를 URL 인코딩 형태로 보여줍니다.",
+    )
     # NOTE: Tistory API v1 does not support deleting post.. WHAT?
     # post_parser.add_argument("--delete", "-d", action="store_true")
     post_parser.add_argument(
@@ -1022,7 +1204,7 @@ def main():
         "--demo", "-D", action="store_true", help="블로그에 데모 포스팅을 작성합니다.",
     )
     post_parser.add_argument("files", nargs="*")
-    post_parser.set_defaults(func=post_command)
+    post_parser.set_defaults(func=_post_command)
 
     category_parser = subparsers.add_parser(
         "category", parents=[common_parser], help="블로그 카테고리를 정보를 가져오는 API 입니다."
@@ -1039,7 +1221,7 @@ def main():
     category_parser.add_argument(
         "--parent", "-m", action="append", default=[], help="부모 카테고리 아이디"
     )
-    category_parser.set_defaults(func=category_command)
+    category_parser.set_defaults(func=_category_command)
 
     comment_parser = subparsers.add_parser(
         "comment", parents=[common_parser], help="블로그 댓글을 관리하는 API 입니다."
@@ -1060,7 +1242,7 @@ def main():
         "--comment-id", "-i", type=str, help="댓글의 아이디."
     )
     comment_parser.add_argument(
-        "--post-id", "-a", required=True, type=str, help="댓글을 작성할 포스트의 아이디."
+        "--post-id", "-A", required=True, type=str, help="댓글을 작성할 포스트의 아이디."
     )
     comment_parser.add_argument(
         "content",
@@ -1068,7 +1250,17 @@ def main():
         type=str,
         help="댓글의 내용. 설정하지 않으면 stdin으로 부터 읽어옵니다.",
     )
-    comment_parser.set_defaults(func=comment_command)
+    comment_parser.set_defaults(func=_comment_command)
+
+    import_parser = subparsers.add_parser(
+        "import", parents=[common_parser], help="게시된 게시글을 불러오는 명령어입니다."
+    )
+    import_parser.add_argument(
+        "--output-dir",
+        "-O",
+        help="게시글을 저장할 디렉토리를 설정합니다. " "기본값은 블로그의 이름을 사용합니다.",
+    )
+    import_parser.set_defaults(func=_import_command)
 
     args = parser.parse_args()
 

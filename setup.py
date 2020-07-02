@@ -6,12 +6,8 @@ from os import path
 from setuptools import setup, find_packages
 
 
-PKG_NAME = "tispoon"
-
-import six
-
-with open(path.join(PKG_NAME, "version.py")) as f:
-    six.exec_(f.read())
+with open(path.join("tispoon", "__version__.py")) as f:
+    exec(f.read())
 
 
 here = path.abspath(path.dirname(__file__))
@@ -20,14 +16,14 @@ with open(path.join(here, "README.md")) as f:
     long_description = f.read()
 
 setup(
-    name=PKG_NAME,
-    version=VERSION,
+    name=__title__,
+    version=__version__,
     description="Tistory blogging library using open API",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/Xvezda/%s" % PKG_NAME,
-    author=AUTHOR,
-    author_email=AUTHOR_EMAIL,
+    url="https://github.com/Xvezda/%s" % __title__,
+    author=__author__,
+    author_email=__email__,
     classifiers=[
         "Natural Language :: Korean",
         "Topic :: Education :: Testing",
@@ -48,6 +44,6 @@ setup(
     """,
     keywords="blog blogging openapi korean tistory library",
     packages=find_packages(),
-    install_requires=["requests", "markdown2", "six"],
+    install_requires=["requests", "markdown2"],
     zip_safe=False,
 )
