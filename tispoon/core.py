@@ -53,7 +53,7 @@ else:
 
 def u(text):
     if PY2:
-        return unicode(str(text)).encode("utf-8")  # noqa
+        return unicode(text).encode("utf-8")  # noqa
     return str(text)
 
 
@@ -581,6 +581,7 @@ class Tispoon(TispoonBase):
         try:
             res = json.loads(r.text)
         except ValueError:
+            logger.debug("응답: %s" % r.text)
             raise
         else:
             if r.status_code != 200:
@@ -927,6 +928,7 @@ class Tispoon(TispoonBase):
 def _info_command(args):
     """블로그 정보 API를 관리하는 명령어 함수 입니다."""
     client = Tispoon(args)
+    print("blogs:")
     for blog in client.blogs:
         print(
             textwrap.dedent(
@@ -937,6 +939,25 @@ def _info_command(args):
                 % (blog.get("name"), blog.get("title"), blog.get("url"))
             )
         )
+    if args.post_id:
+        print("posts:")
+        for post_id in args.post_id:
+            post = client.post_read(post_id)
+            # url
+            print("- url: %s" % post.get("postUrl"))
+            # id
+            print("  id: %s" % post.get("id"))
+            # title
+            print("  title: %s" % post.get("title"))
+            # content
+            content = post.get("content")
+            print("  content: |")
+            print("\n".join(map(lambda l: " " * 4 + l, content.split("\n"))))
+            # tags
+            tags = post.get("tags", {}).get("tag", [])
+            if tags:
+                print("  tags:")
+                print("\n".join(map(lambda t: " " * 2 + " - " + t, tags)))
 
 
 def _post_command(args):
@@ -1004,8 +1025,8 @@ def _comment_command(args):
                 textwrap.dedent(
                     """\
                 - id: %s
-                    name: %s
-                    comment: %s"""
+                  name: %s
+                  comment: %s"""
                     % (
                         comment.get("id"),
                         comment.get("name"),
@@ -1058,6 +1079,9 @@ def main():
 
     info_parser = subparsers.add_parser(
         "info", parents=[common_parser], help="자신의 블로그 정보를 가져오는 API 입니다."
+    )
+    info_parser.add_argument(
+        "--post-id", "-i", action="append", help="정보를 가져올 포스트 아이디를 설정합니다."
     )
     info_parser.set_defaults(func=_info_command)
 
