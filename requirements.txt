@@ -1,6 +1,2 @@
-certifi==2020.4.5.1
-chardet==3.0.4
-idna==2.9
-markdown2==2.3.8
-requests==2.23.0
-urllib3==1.25.8
+markdown2
+requests
