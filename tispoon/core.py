@@ -29,6 +29,7 @@ import logging
 
 # Third party modules
 import requests
+from bs4 import BeautifulSoup
 from markdown2 import markdown as _markdown
 
 # Get version info
@@ -1129,7 +1130,8 @@ def _import_command(args):
             if slogan:
                 content += "slogan: /%s\n" % slogan
             content += "---\n\n"
-        content += post_detail.get("content")
+        html = BeautifulSoup(post_detail.get("content"), "html.parser")
+        content += html.prettify()
         content += "\n"
         logger.debug("content: %s" % content)
         with open(dest, "w") as f:
