@@ -45,5 +45,6 @@ setup(
     keywords="blog blogging openapi korean tistory library",
     packages=find_packages(),
     install_requires=["requests", "markdown2", "BeautifulSoup4"],
+    tests_require=["pytest"],
     zip_safe=False,
 )
