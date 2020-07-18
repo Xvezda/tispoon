@@ -71,7 +71,7 @@ class MockResponse(object):
 
     @property
     def status_code(self):
-        return self._status_code
+        return getattr(self, "_status_code", 200)
 
     @property
     def text(self):
@@ -79,7 +79,7 @@ class MockResponse(object):
             return self._text
         except AttributeError:
             return self.MOCK_JSON_BASE % (
-                '"%s"' % getattr(self, "_status_code", 200),
+                '"%s"' % self.status_code,
                 "%s" % getattr(self, "_item", "{}"),
                 '"%s"' % getattr(self, "_error_message", ""),
             )
@@ -92,47 +92,6 @@ class MockHtmlResponse(MockResponse):
 
 class MockHtmlErrorResponse(MockHtmlResponse):
     _status_code = 500
-
-
-class MockBlogListResponse(MockResponse):
-    _status_code = 200
-    # 응답값 예
-    # https://tistory.github.io/document-tistory-apis/apis/v1/blog/list.html#%EC%9D%91%EB%8B%B5%EA%B0%92-%EC%98%88
-    _item = """\
-    {
-        "id": "blog_oauth_test@daum.net",
-        "userId": "12345",
-        "blogs": [
-            {
-                "name": "oauth-test",
-                "url": "http://oauth-test.tistory.com",
-                "secondaryUrl": "http://",
-                "nickname": "티스토리 테스트",
-                "title": "테스트 블로그 1",
-                "description": "안녕하세요! 티스토리입니다.",
-                "default": "Y",
-                "blogIconUrl": "https://blog_icon_url",
-                "faviconUrl": "https://favicon_url",
-                "profileThumbnailImageUrl": "https://profile_image",
-                "profileImageUrl": "https://profile_image",
-                "role": "소유자",
-                "blogId": "123",
-                "statistics": {
-                    "post": "182",
-                    "comment": "146",
-                    "trackback": "0",
-                    "guestbook": "39",
-                    "invitation": "0"
-                }
-            }
-        ]
-    }
-    """
-
-
-class MockBlogListErrorResponse(MockBlogListResponse):
-    _status_code = 500
-    _error_message = "foobar"
 
 
 @pytest.fixture
@@ -240,19 +199,99 @@ def test_blog_info_html_error_handling(tispoon_cli, monkeypatch):
         tispoon_cli.blog_info()
 
 
+class MockBlogListResponse(MockResponse):
+    # 응답값 예
+    # https://tistory.github.io/document-tistory-apis/apis/v1/blog/list.html#%EC%9D%91%EB%8B%B5%EA%B0%92-%EC%98%88
+    _item = """\
+    {
+        "id": "blog_oauth_test@daum.net",
+        "userId": "12345",
+        "blogs": [
+            {
+                "name": "oauth-test",
+                "url": "http://oauth-test.tistory.com",
+                "secondaryUrl": "http://",
+                "nickname": "티스토리 테스트",
+                "title": "테스트 블로그 1",
+                "description": "안녕하세요! 티스토리입니다.",
+                "default": "Y",
+                "blogIconUrl": "https://blog_icon_url",
+                "faviconUrl": "https://favicon_url",
+                "profileThumbnailImageUrl": "https://profile_image",
+                "profileImageUrl": "https://profile_image",
+                "role": "소유자",
+                "blogId": "123",
+                "statistics": {
+                    "post": "182",
+                    "comment": "146",
+                    "trackback": "0",
+                    "guestbook": "39",
+                    "invitation": "0"
+                }
+            }
+        ]
+    }
+    """
+
+
+class MockBlogListErrorResponse(MockBlogListResponse):
+    _status_code = 500
+    _error_message = "foobar"
+
+
 def test_blog_info(tispoon_cli, monkeypatch):
     monkeypatch.setattr("requests.get", mockget(MockBlogListResponse()))
-    blog_info = tispoon_cli.blog_info()
-    first_blog = blog_info[0]
-    first_blog_name = first_blog.get("name")
-    assert first_blog_name == "oauth-test"
-    assert first_blog_name == tispoon_cli.blogs[0].get("name")
+    assert tispoon_cli.blogs[0].get("name") == "oauth-test"
 
 
 def test_blog_info_error(tispoon_cli, monkeypatch):
     monkeypatch.setattr("requests.get", mockget(MockBlogListErrorResponse()))
     with pytest.raises(core.TispoonError, match="foobar"):
         tispoon_cli.blog_info()
+
+
+def test_blog(tispoon_cli, monkeypatch):
+    monkeypatch.setattr("requests.get", mockget(MockBlogListResponse()))
+    assert tispoon_cli.blog == "oauth-test"
+
+    # 기본 블로그 임의 지정
+    tispoon_cli.blog = "foobar"
+    assert tispoon_cli.blog == "foobar"
+
+    with pytest.raises(ValueError):
+        tispoon_cli.blog = 1
+
+
+class MockPostListResponse(MockResponse):
+    _item = """\
+    {
+      "url": "http://oauth-test.tistory.com",
+      "secondaryUrl": "",
+      "page": "1",
+      "count": "1",
+      "totalCount": "181",
+      "posts": [
+        {
+          "id": "201",
+          "title": "테스트 입니다.",
+          "postUrl": "http://oauth-test.tistory.com/201",
+          "visibility": "0",
+          "categoryId": "0",
+          "comments": "0",
+          "trackbacks": "0",
+          "date": "2018-06-01 17:54:28"
+        }
+      ]
+    }"""
+
+
+def test_post_list(tispoon_cli, monkeypatch):
+    tispoon_cli.blog = "oauth-test"
+    monkeypatch.setattr("requests.get", mockget(MockPostListResponse()))
+    count = 0
+    for post in tispoon_cli.posts:
+        count += 1
+    assert count != 0
 
 
 if __name__ == "__main__":
