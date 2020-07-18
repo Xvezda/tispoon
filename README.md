@@ -44,7 +44,6 @@ optional arguments:
   --verbose, -v         로그의 정보량을 설정합니다. `v`의
                         갯수에 따라 정보량이 달라집니다.
   --version, -V         버전 정보를 출력하고 종료합니다.
-                        `xvezda.tistory.com` 의 경우 `xvezda`
 ```
 
 블로그 정보
