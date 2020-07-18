@@ -107,18 +107,6 @@ def mockget(response):
     return wrapper
 
 
-class TestUtils:
-    # FIXME: 이후에 public api 호출로 coverage 해결이 될 경우 제거하는것을 고려
-    def test_u(self):
-        assert isinstance(core.u(u"가"), str)
-
-    def test_quote(self):
-        assert core.quote(u"가") == "%EA%B0%80"
-
-    def test_unquote(self):
-        assert core.unquote("%EA%B0%80") == u"가"
-
-
 def test_dotget():
     fake = {"foo": {"bar": "baz"}}
     with pytest.raises(KeyError):
@@ -160,7 +148,7 @@ def test_auth_callback(tispoon_cli, monkeypatch, capsys):
     def mocksocket(*args, **kwargs):
         return MockSocket(
             responses=[
-                b"GET %s?code=deadbeef&state=%s HTTP/1.1"
+                b"GET %s?code=deadbeef&state=%s HTTP/1.1\r\n\r\n"
                 % (path.encode("utf-8"), hash)
             ]
         )
