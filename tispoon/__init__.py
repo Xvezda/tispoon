@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# flake8: noqa
 
 from __future__ import absolute_import
 from __future__ import division
@@ -17,5 +18,4 @@ from .core import (
     COMMENT_PUBLIC,
     TispoonError,
     Tispoon,
-    main,
 )
