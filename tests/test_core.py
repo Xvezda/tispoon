@@ -345,5 +345,30 @@ def test_post_write(tispoon_cli, monkeypatch):
     assert result.get("url")
 
 
+def test_post_modify(tispoon_cli, monkeypatch):
+    class MockPostWriteSuccessResponse(MockResponse):
+        _text = """\
+        {
+            "tistory":{
+                "status":"200",
+                "postId":"74",
+                "url":"http://foobar.tistory.com/74"
+            }
+        }
+        """
+
+    def mockpost(*args, **kwargs):
+        assert args[0].startswith("https://www.tistory.com/apis/post/modify")
+        return MockPostWriteSuccessResponse()
+
+    tispoon_cli.blog = "foobar"
+    monkeypatch.setattr("requests.post", mockpost)
+    result = tispoon_cli.post_modify(
+        74, {"title": "hello world", "content": "spam and egg"}
+    )
+    assert result.get("post_id")
+    assert result.get("url")
+
+
 if __name__ == "__main__":
     pytest.main()
