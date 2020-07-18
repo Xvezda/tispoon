@@ -60,13 +60,13 @@ def u(text):
 
 def quote(url):
     if PY3:
-        return _quote(bytes(str(url), encoding="utf-8"))
-    return _quote(str(url))
+        return _quote(bytes(u(url), encoding="utf-8"))
+    return _quote(u(url))
 
 
 def unquote(url):
     if PY3:
-        return _unquote(str(url), encoding="utf-8")
+        return _unquote(u(url), encoding="utf-8")
     return _unquote(u(url)).decode("utf-8")
 
 

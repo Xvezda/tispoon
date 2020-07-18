@@ -7,7 +7,12 @@ from tispoon import core
 
 
 class MockArgs(object):
-    pass
+    def __init__(self, token=None):
+        self._token = token
+
+    @property
+    def token(self):
+        return self._token
 
 
 class MockResponse(object):
@@ -93,6 +98,24 @@ def tispoon_cli():
     return core.Tispoon(args)
 
 
+def mockget(response):
+    def wrapper(*args, **kwargs):
+        return response
+
+    return wrapper
+
+
+class TestUtils:
+    def test_u(self):
+        assert isinstance(core.u(u"가"), str)
+
+    def test_quote(self):
+        assert core.quote(u"가") == "%EA%B0%80"
+
+    def test_unquote(self):
+        assert core.unquote("%EA%B0%80") == u"가"
+
+
 def test_dotget():
     fake = {"foo": {"bar": "baz"}}
     with pytest.raises(KeyError):
@@ -106,11 +129,14 @@ def test_dotget():
     assert core.dotget(fake, "foo.bar") == "baz"
 
 
-def mockget(response):
-    def wrapper(*args, **kwargs):
-        return response
+def test_auth_empty_config(tispoon_cli, monkeypatch):
+    with pytest.raises(ValueError):
+        tispoon_cli.auth()
 
-    return wrapper
+
+def test_auth_assign_token(tispoon_cli, monkeypatch):
+    tispoon_cli.token = "deadbeef"
+    assert tispoon_cli.auth()
 
 
 def test_blog_info_html_handling(tispoon_cli, monkeypatch):
@@ -128,7 +154,10 @@ def test_blog_info_html_error_handling(tispoon_cli, monkeypatch):
 def test_blog_info(tispoon_cli, monkeypatch):
     monkeypatch.setattr("requests.get", mockget(MockBlogListResponse()))
     blog_info = tispoon_cli.blog_info()
-    assert blog_info[0].get("name") == "oauth-test"
+    first_blog = blog_info[0]
+    first_blog_name = first_blog.get("name")
+    assert first_blog_name == "oauth-test"
+    assert first_blog_name == tispoon_cli.blogs[0].get("name")
 
 
 def test_blog_info_error(tispoon_cli, monkeypatch):
