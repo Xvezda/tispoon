@@ -80,29 +80,32 @@ def _post_command(args):
     client = Tispoon(args)
     files = args.file or [] + args.files
 
+    for file_path in files:
+        client.post_file_path(file_path)
+
+
+def _posts_command(args):
+    client = Tispoon(args)
+
     def transform(url):
         if not args.encode_url:
             return unquote(url)
         return url
 
-    if args.list:
-        for post in client.posts:
-            print(
-                textwrap.dedent(
-                    """\
-                    - title: %s
-                      id: %s
-                      url: %s"""
-                    % (
-                        post.get("title"),
-                        post.get("id"),
-                        transform(post.get("postUrl")),
-                    )
+    for post in client.posts:
+        print(
+            textwrap.dedent(
+                """\
+                - title: %s
+                  id: %s
+                  url: %s"""
+                % (
+                    post.get("title"),
+                    post.get("id"),
+                    transform(post.get("postUrl")),
                 )
             )
-        return
-    for file_path in files:
-        client.post_file_path(file_path)
+        )
 
 
 def _category_command(args):
@@ -285,15 +288,6 @@ def main():
     post_parser = subparsers.add_parser(
         "post", parents=[common_parser], help="블로그 글을 관리하는 API 입니다."
     )
-    post_parser.add_argument(
-        "--list", "-l", action="store_true", help="포스트 목록을 가져옵니다."
-    )
-    post_parser.add_argument(
-        "--encode-url",
-        "-e",
-        action="store_true",
-        help="포스트 주소를 URL 인코딩 형태로 보여줍니다.",
-    )
     # NOTE: Tistory API v1 does not support deleting post.. WHAT?
     # post_parser.add_argument("--delete", "-d", action="store_true")
     post_parser.add_argument(
@@ -308,6 +302,17 @@ def main():
     )
     post_parser.add_argument("files", nargs="*")
     post_parser.set_defaults(func=_post_command)
+
+    posts_parser = subparsers.add_parser(
+        "posts", parents=[common_parser], help="포스트 목록을 가져옵니다."
+    )
+    posts_parser.add_argument(
+        "--encode-url",
+        "-e",
+        action="store_true",
+        help="포스트 주소를 URL 인코딩 형태로 보여줍니다.",
+    )
+    posts_parser.set_defaults(func=_posts_command)
 
     category_parser = subparsers.add_parser(
         "category", parents=[common_parser], help="블로그 카테고리를 정보를 가져오는 API 입니다."
