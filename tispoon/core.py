@@ -33,7 +33,7 @@ from bs4 import BeautifulSoup
 from markdown2 import markdown as _markdown
 
 # Get version info
-from .__version__ import __version__
+from .__about__ import __version__
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())

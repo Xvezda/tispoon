@@ -6,7 +6,7 @@ from os import path
 from setuptools import setup, find_packages
 
 
-with open(path.join("tispoon", "__version__.py")) as f:
+with open(path.join("tispoon", "__about__.py")) as f:
     exec(f.read())
 
 
