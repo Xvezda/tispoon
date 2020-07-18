@@ -34,11 +34,13 @@ py3dist:
 test: py2test py3test
 
 py2test:
-	$(PY) -m pytest -v -s --cov-report html --cov-report term \
+	$(PY) -m pytest -v -s --cov-config=.coveragerc \
+		--cov-report html --cov-report term \
 		--cov=$(PKG_NAME) $(TEST_DIR)
 
 py3test:
-	$(PY3) -m pytest -v -s --cov-append --cov-report html --cov-report term \
+	$(PY3) -m pytest -v -s --cov-append --cov-config=.coveragerc \
+		--cov-report html --cov-report term \
 		--cov=$(PKG_NAME) $(TEST_DIR)
 
 check:
