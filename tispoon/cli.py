@@ -10,6 +10,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+"""
+Tispoon 라이브러리를 터미널에서 직접 호출하여 사용이 가능한 커맨드라인 클라이언트입니다.
+"""
 
 import os
 import sys
