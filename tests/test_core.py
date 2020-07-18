@@ -332,10 +332,12 @@ def test_post_write(tispoon_cli, monkeypatch):
         }
         """
 
+    def mockpost(*args, **kwargs):
+        assert args[0].startswith("https://www.tistory.com/apis/post/write")
+        return MockPostWriteSuccessResponse()
+
     tispoon_cli.blog = "foobar"
-    monkeypatch.setattr(
-        "requests.post", mockget(MockPostWriteSuccessResponse())
-    )
+    monkeypatch.setattr("requests.post", mockpost)
     result = tispoon_cli.post_write(
         {"title": "hello world", "content": "ham and egg"}
     )
