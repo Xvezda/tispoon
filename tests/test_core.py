@@ -29,8 +29,8 @@ def tispoon_cli():
 def test_dotget():
     fake = {"foo": {"bar": "baz"}}
     assert core.dotget(fake, "foo.bar") == "baz"
-    assert core.dotget(fake, "foo.egg") == None
-    assert core.dotget(fake, "egg.spam") == None
+    assert core.dotget(fake, "foo.egg") is None
+    assert core.dotget(fake, "egg.spam") is None
 
 
 def test_list(tispoon_cli, monkeypatch):
