@@ -438,7 +438,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text, encoding="utf-8")
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -473,7 +473,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -584,7 +584,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -614,7 +614,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -650,7 +650,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -676,7 +676,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -770,7 +770,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -824,7 +824,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -843,7 +843,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -877,7 +877,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -903,7 +903,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
@@ -925,7 +925,7 @@ class Tispoon(TispoonBase):
             res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
-            raise
+            raise TispoonError("응답이 JSON 형식이 아닙니다")
         else:
             if r.status_code != 200:
                 raise TispoonError(
