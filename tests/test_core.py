@@ -315,6 +315,9 @@ def test_find_post(tispoon_cli, monkeypatch):
     post = tispoon_cli.find_post(slogan=u"/hello-world")
     assert post
 
+    post = tispoon_cli.find_post(slogan=u"hello-world")
+    assert post
+
 
 if __name__ == "__main__":
     pytest.main()

@@ -529,6 +529,9 @@ class Tispoon(TispoonBase):
                 def remove_prefix(url):
                     return re.sub(r"^(\.{0,2}\/)*", "", url)
 
+                def simplify(slogan):
+                    return slogan.replace(" ", "-").replace("-", "")
+
                 post_url = post.get("postUrl")
                 logger.debug("post url: %s" % post_url)
                 if not post_url:
@@ -539,10 +542,10 @@ class Tispoon(TispoonBase):
                     raise TispoonError("예상치 못한 오류 발생")
 
                 post_slogan = re.sub(r"^/?entry/", "", post_path)
-                simplified_slogan = remove_prefix(post_slogan.replace("-", ""))
+                simplified_slogan = remove_prefix(simplify(post_slogan))
                 logger.debug("simplified slogan: %s" % simplified_slogan)
 
-                clean_slogan = remove_prefix(slogan.replace("-", ""))
+                clean_slogan = remove_prefix(simplify(slogan))
                 if simplified_slogan.startswith(quote(u(clean_slogan))):
                     logger.debug("포스팅 발견! -> %s" % u(post.get("title")))
                     return post
