@@ -403,7 +403,7 @@ class Tispoon(TispoonBase):
         Args:
             path (str): 문자열로 이루어진 URL 경로입니다.
             output (str): 응답형식을 지정하며 생략가능합니다.
-                생략할 경우 요청헤더의 `Content-Type`을 보고 응답형식을 결정하며 기본 값은 `xml`입니다.
+                생략할 경우 요청헤더의 `Content-Type`을 보고 응답형식을 결정하며 기본 값은 `json`입니다.
             kwargs (dict): URL parameter로 변환 될 객체입니다.
                 `key=value, key2=value2` 형태의 인자가 `?key=value&key2=value2`처럼 변환됩니다.
 

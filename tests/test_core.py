@@ -33,7 +33,7 @@ def test_dotget():
     assert core.dotget(fake, "egg.spam") is None
 
 
-def test_list(tispoon_cli, monkeypatch):
+def test_blog_info(tispoon_cli, monkeypatch):
     def mockget(*args, **kwargs):
         class MockHtmlResponse(MockResponse):
             status_code = 200
