@@ -300,7 +300,7 @@ def main():
     post_parser.add_argument(
         "--demo", "-D", action="store_true", help="블로그에 데모 포스팅을 작성합니다.",
     )
-    post_parser.add_argument("files", nargs="*")
+    post_parser.add_argument("files", nargs="+")
     post_parser.set_defaults(func=_post_command)
 
     posts_parser = subparsers.add_parser(
