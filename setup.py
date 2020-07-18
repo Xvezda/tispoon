@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+# flake8: noqa
 
 from os import path
 from setuptools import setup, find_packages
 
 
-with open(path.join("tispoon", "__version__.py")) as f:
+with open(path.join("tispoon", "__about__.py")) as f:
     exec(f.read())
 
 
@@ -40,10 +40,11 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        tispoon=tispoon.core:main
+        tispoon=tispoon.cli:main
     """,
     keywords="blog blogging openapi korean tistory library",
     packages=find_packages(),
     install_requires=["requests", "markdown2", "BeautifulSoup4"],
+    tests_require=["pytest", "pytest-cov"],
     zip_safe=False,
 )
