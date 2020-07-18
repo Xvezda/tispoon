@@ -372,6 +372,38 @@ def test_post_modify(tispoon_cli, monkeypatch):
     assert result.get("url")
 
 
+def test_category_list(tispoon_cli, monkeypatch):
+    class MockCategoryListResponse(MockResponse):
+        # https://tistory.github.io/document-tistory-apis/apis/v1/category/list.html
+        _item = """\
+        {
+            "url":"oauth",
+            "secondaryUrl":"",
+            "categories":[
+                {
+                    "id":"403929",
+                    "name":"OAuth2.0 Athentication",
+                    "parent":"",
+                    "label":"OAuth2.0 Athentication",
+                    "entries":"0"
+                },
+                {
+                    "id":"403930",
+                    "name":"Blog API Series",
+                    "parent":"",
+                    "label":"Blog API Series",
+                    "entries":"0"
+                }
+            ]
+        }
+        """
+
+    monkeypatch.setattr("requests.get", mockget(MockCategoryListResponse()))
+    tispoon_cli.blog = "foobar"
+    categories = tispoon_cli.category_list()
+    assert len(categories) > 0
+
+
 class MockCommentNewestResponse(MockResponse):
     _item = """\
     {
