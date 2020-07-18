@@ -252,6 +252,7 @@ def test_blog(tispoon_cli, monkeypatch):
 
 
 class MockPostListResponse(MockResponse):
+    # https://tistory.github.io/document-tistory-apis/apis/v1/post/list.html
     _item = """\
     {
       "url": "http://oauth-test.tistory.com",
@@ -307,7 +308,7 @@ def test_find_post(tispoon_cli, monkeypatch):
     assert post
 
 
-def test_read_post(tispoon_cli, monkeypatch):
+def test_post_read(tispoon_cli, monkeypatch):
     tispoon_cli.blog = "oauth-test"
     monkeypatch.setattr("requests.get", mockget(MockPostListResponse()))
 
@@ -316,6 +317,30 @@ def test_read_post(tispoon_cli, monkeypatch):
 
     post = tispoon_cli.post_read(201)
     assert post
+
+
+def test_post_write(tispoon_cli, monkeypatch):
+    class MockPostWriteSuccessResponse(MockResponse):
+        # https://tistory.github.io/document-tistory-apis/apis/v1/post/write.html
+        _text = """\
+        {
+            "tistory":{
+                "status":"200",
+                "postId":"74",
+                "url":"http://foobar.tistory.com/74"
+            }
+        }
+        """
+
+    tispoon_cli.blog = "foobar"
+    monkeypatch.setattr(
+        "requests.post", mockget(MockPostWriteSuccessResponse())
+    )
+    result = tispoon_cli.post_write(
+        {"title": "hello world", "content": "ham and egg"}
+    )
+    assert result.get("post_id")
+    assert result.get("url")
 
 
 if __name__ == "__main__":
