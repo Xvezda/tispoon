@@ -9,4 +9,4 @@
 __title__ = "tispoon"
 __author__ = "Xvezda"
 __email__ = "xvezda@naver.com"
-__version__ = "1.0.8"
+__version__ = "1.0.9"

@@ -45,8 +45,6 @@ optional arguments:
                         갯수에 따라 정보량이 달라집니다.
   --version, -V         버전 정보를 출력하고 종료합니다.
                         `xvezda.tistory.com` 의 경우 `xvezda`
-  --verbose, -v
-  --version, -V         show program's version number and exit
 ```
 
 블로그 정보
