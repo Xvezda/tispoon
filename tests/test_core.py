@@ -307,5 +307,16 @@ def test_find_post(tispoon_cli, monkeypatch):
     assert post
 
 
+def test_read_post(tispoon_cli, monkeypatch):
+    tispoon_cli.blog = "oauth-test"
+    monkeypatch.setattr("requests.get", mockget(MockPostListResponse()))
+
+    with pytest.raises(core.TispoonError, match="post_id"):
+        tispoon_cli.post_read()
+
+    post = tispoon_cli.post_read(201)
+    assert post
+
+
 if __name__ == "__main__":
     pytest.main()
