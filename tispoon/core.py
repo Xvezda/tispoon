@@ -435,7 +435,7 @@ class Tispoon(TispoonBase):
             r = requests.get(url)
 
         try:
-            res = json.loads(r.text, encoding="utf-8")
+            res = json.loads(r.text)
         except ValueError:
             logger.debug("응답: %s" % r.text)
             raise TispoonError("응답이 JSON 형식이 아닙니다")
