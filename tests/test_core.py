@@ -333,7 +333,8 @@ def test_post_write(tispoon_cli, monkeypatch):
         """
 
     def mockpost(*args, **kwargs):
-        assert args[0].startswith("https://www.tistory.com/apis/post/write")
+        url = args[0]
+        assert url.startswith("https://www.tistory.com/apis/post/write")
         return MockPostWriteSuccessResponse()
 
     tispoon_cli.blog = "foobar"
@@ -358,7 +359,8 @@ def test_post_modify(tispoon_cli, monkeypatch):
         """
 
     def mockpost(*args, **kwargs):
-        assert args[0].startswith("https://www.tistory.com/apis/post/modify")
+        url = args[0]
+        assert url.startswith("https://www.tistory.com/apis/post/modify")
         return MockPostWriteSuccessResponse()
 
     tispoon_cli.blog = "foobar"
@@ -368,6 +370,155 @@ def test_post_modify(tispoon_cli, monkeypatch):
     )
     assert result.get("post_id")
     assert result.get("url")
+
+
+class MockCommentNewestResponse(MockResponse):
+    _item = """\
+    {
+        "url":"http://oauth.tistory.com",
+        "secondaryUrl":"",
+        "comments": [
+            {
+                "id":"8176926",
+                "date":"1303796900",
+                "postId":"4",
+                "name":"Tistory API",
+                "homepage":"http://oauth.tistory.com",
+                "comment":"비루한 글에 칭찬을 하시니 몸둘바를 모르.. 지 않아!",
+                "open":"Y"
+            },
+            {
+                "id":"8176923",
+                "date":"1303796801",
+                "postId":"4",
+                "name":"글쎄 요",
+                "homepage":"http://shesgone.com",
+                "comment":"제 홈에 와서 구경해보세요^_^",
+                "open":"N"
+            },
+            {
+                "id":"8176918",
+                "date":"1303796711",
+                "postId":"4",
+                "name":"지나다가",
+                "homepage":"http://someurl.com",
+                "comment":"좋은 글 감사합니다.",
+                "open":"Y"
+            }
+        ]
+    }
+    """
+
+
+def test_comment_newest(tispoon_cli, monkeypatch):
+    monkeypatch.setattr("requests.get", mockget(MockCommentNewestResponse()))
+    tispoon_cli.blog = "foobar"
+    comments = tispoon_cli.comment_newest()
+    assert len(comments) > 0
+
+
+class MockCommentListResponse(MockResponse):
+    _item = """\
+    {
+        "url":"http://oauth.tistory.com/4",
+        "secondaryUrl":"",
+        "postId": "4",
+        "totalCount": "3",
+        "comments": [
+            {
+                "id":"8176926",
+                "date":"1303796900",
+                "postId":"4",
+                "name":"Tistory API",
+                "homepage":"http://oauth.tistory.com",
+                "comment":"비루한 글에 칭찬을 하시니 몸둘바를 모르.. 지 않아!",
+                "open":"Y"
+            },
+            {
+                "id":"8176923",
+                "date":"1303796801",
+                "postId":"4",
+                "name":"글쎄 요",
+                "homepage":"http://shesgone.com",
+                "comment":"제 홈에 와서 구경해보세요^_^",
+                "open":"N"
+            },
+            {
+                "id":"8176918",
+                "date":"1303796711",
+                "postId":"4",
+                "name":"지나다가",
+                "homepage":"http://someurl.com",
+                "comment":"좋은 글 감사합니다.",
+                "open":"Y"
+            }
+        ]
+    }
+    """
+
+
+def test_comment_list(tispoon_cli, monkeypatch):
+    monkeypatch.setattr("requests.get", mockget(MockCommentListResponse()))
+    tispoon_cli.blog = "foobar"
+    comments = tispoon_cli.comment_list(4)
+    assert len(comments) > 0
+
+
+class MockCommentWriteResponse(MockResponse):
+    _text = """\
+    {
+        "tistory":{
+            "status":"200",
+            "result":"OK",
+            "commentUrl":"http://oauth.tistory.com/4#comment8176976"
+        }
+    }
+    """
+
+
+def test_comment_write(tispoon_cli, monkeypatch):
+    def mockpost(*args, **kwargs):
+        url = args[0]
+        assert url.startswith("https://www.tistory.com/apis/comment/write")
+        return MockCommentWriteResponse()
+
+    monkeypatch.setattr("requests.post", mockpost)
+    tispoon_cli.blog = "oauth"
+    assert tispoon_cli.comment_write(4, {"content": "hello world"})
+
+
+def test_comment_modify(tispoon_cli, monkeypatch):
+    class MockCommentModifyResponse(MockCommentWriteResponse):
+        pass
+
+    def mockpost(*args, **kwargs):
+        url = args[0]
+        assert url.startswith("https://www.tistory.com/apis/comment/modify")
+        return MockCommentModifyResponse()
+
+    monkeypatch.setattr("requests.post", mockpost)
+    tispoon_cli.blog = "oauth"
+    assert tispoon_cli.comment_modify(4, {"content": "hello world"})
+
+
+def test_comment_delete(tispoon_cli, monkeypatch):
+    class MockCommentDeleteResponse(MockResponse):
+        _text = """\
+        {
+            "tistory": {
+                "status":"200"
+            }
+        }
+        """
+
+    def mockpost(*args, **kwargs):
+        url = args[0]
+        assert url.startswith("https://www.tistory.com/apis/comment/delete")
+        return MockCommentDeleteResponse()
+
+    monkeypatch.setattr("requests.post", mockpost)
+    tispoon_cli.blog = "oauth"
+    assert tispoon_cli.comment_delete(4, 8176976)
 
 
 if __name__ == "__main__":
