@@ -829,7 +829,7 @@ class Tispoon(TispoonBase):
                     dotget(res, "tistory.error_message") or "예상치 못한 오류 발생"
                 )
 
-        return dotget(res, "tistory.item.comments.comment")
+        return dotget(res, "tistory.item.comments")
 
     def comment_list(self, post_id):
         """댓글 목록을 가져옵니다."""
