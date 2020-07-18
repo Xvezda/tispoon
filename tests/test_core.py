@@ -42,9 +42,8 @@ def test_list(tispoon_cli, monkeypatch):
         return MockHtmlResponse()
 
     monkeypatch.setattr("requests.get", mockget)
-    with pytest.raises(core.TispoonError) as err:
+    with pytest.raises(core.TispoonError, match=r"JSON"):
         tispoon_cli.blog_info()
-    assert "JSON" in str(err.value)
 
 
 if __name__ == "__main__":
