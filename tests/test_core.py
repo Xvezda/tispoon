@@ -3,7 +3,12 @@
 
 
 import pytest
+from textwrap import dedent
 from tispoon import core
+
+
+def noop(*args, **kwargs):
+    pass
 
 
 class MockArgs(object):
@@ -13,6 +18,45 @@ class MockArgs(object):
     @property
     def token(self):
         return self._token
+
+
+class MockConnection(object):
+    def __init__(self, responses=None, *args, **kwargs):
+        self.g = self._stream()
+        self.responses = responses
+
+    def _stream(self):
+        for response in self.responses:
+            yield response
+
+    def recv(self, *args):
+        return next(self.g)
+
+    def send(self, *args):
+        pass
+
+    def close(self, *args):
+        pass
+
+
+class MockSocket(object):
+    def __init__(self, responses=None, *args, **kwargs):
+        self.responses = responses
+
+    def accept(self, *args):
+        return MockConnection(self.responses), "0.0.0.0"
+
+    def bind(self, *args):
+        pass
+
+    def setsockopt(self, *args):
+        pass
+
+    def listen(self, *args):
+        pass
+
+    def close(self, *args):
+        pass
 
 
 class MockResponse(object):
@@ -137,6 +181,52 @@ def test_auth_empty_config(tispoon_cli, monkeypatch):
 def test_auth_assign_token(tispoon_cli, monkeypatch):
     tispoon_cli.token = "deadbeef"
     assert tispoon_cli.auth()
+
+
+def test_auth_callback(tispoon_cli, monkeypatch, capsys):
+    # FIXME
+    # TODO: auth 함수를 조금 더 작은 단위로 쪼개야 함.
+    # b'POST / HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4'
+    # b'\r\n\r\n1234'
+
+    monkeypatch.setenv("TISPOON_APP_ID", "test_app_id")
+    monkeypatch.setenv("TISPOON_APP_SECRET", "test_app_secret")
+
+    path = core.urlparse(core.REDIR_URL).path
+    monkeypatch.setattr("os.urandom", lambda n: b"A" * n)
+    # sha256(Ax32)
+    # == 22a48051594c1949deed7040850c1f0f8764537f5191be56732d16a54c1d8153
+    hash = b"22a48051594c1949deed7040850c1f0f8764537f5191be56732d16a54c1d8153"
+
+    def mocksocket(*args, **kwargs):
+        return MockSocket(
+            responses=[
+                b"GET %s?code=deadbeef&state=%s HTTP/1.1"
+                % (path.encode("utf-8"), hash)
+            ]
+        )
+
+    monkeypatch.setattr("socket.socket", mocksocket)
+
+    import webbrowser
+
+    def webbrowser_get():
+        raise webbrowser.Error
+
+    monkeypatch.setattr("webbrowser.get", webbrowser_get)
+    monkeypatch.setattr("webbrowser.open", noop)
+
+    class MockTokenResponse(MockResponse):
+        _status_code = 200
+        _text = "access_token=deadbeef"
+
+    monkeypatch.setattr("requests.get", mockget(MockTokenResponse()))
+
+    tispoon_cli.auth()
+    output = capsys.readouterr()
+
+    assert "http" in output.err
+    assert tispoon_cli.token == "deadbeef"
 
 
 def test_blog_info_html_handling(tispoon_cli, monkeypatch):

@@ -269,7 +269,7 @@ class Tispoon(TispoonBase):
             app_secret = os.getenv("TISPOON_APP_SECRET")
 
         if not app_id or not app_secret:
-            raise ValueError("app_id, app_secret 둘 중 하나는 반드시 제공되어야 합니다.")
+            raise ValueError("app_id, app_secret 값이 제공되어야 합니다.")
 
         # 보안을 위한 임의 토큰을 생성합니다.
         state = hashlib.sha256(os.urandom(32)).hexdigest()
@@ -296,7 +296,7 @@ class Tispoon(TispoonBase):
         try:
             browser = webbrowser.get()
             browser.open(url, new=2)
-        except webbrowser.Error:  # 웹 브라우저가 존재하지 않는경우 인증 주소를 stdout으로 알립니다.
+        except webbrowser.Error:  # 웹 브라우저가 존재하지 않는경우 인증 주소를 stderr으로 알립니다.
             print("다음의 주소를 방문하여 권한을 허락해주세요.", file=sys.stderr)
             print(url, file=sys.stderr)
 
