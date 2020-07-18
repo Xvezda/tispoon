@@ -95,8 +95,14 @@ def tispoon_cli():
 
 def test_dotget():
     fake = {"foo": {"bar": "baz"}}
-    assert core.dotget(fake, "egg.spam") is None
-    assert core.dotget(fake, "foo.egg") is None
+    with pytest.raises(KeyError):
+        core.dotget(fake, "egg.spam")
+    assert core.dotget(fake, "egg.spam", optional=True) is None
+
+    with pytest.raises(KeyError):
+        core.dotget(fake, "foo.egg")
+    assert core.dotget(fake, "foo.egg", optional=True) is None
+
     assert core.dotget(fake, "foo.bar") == "baz"
 
 

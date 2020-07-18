@@ -161,10 +161,11 @@ def dotget(obj, expr, optional=False):
     context = obj
     for token in expr.split("."):
         try:
-            context = context.get(token)
-        except AttributeError:
+            context = context[token]
+        except KeyError:
             if optional:
                 return None
+            raise
     return context
 
 
