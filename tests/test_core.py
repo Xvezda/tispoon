@@ -108,6 +108,7 @@ def mockget(response):
 
 
 class TestUtils:
+    # FIXME: 이후에 public api 호출로 coverage 해결이 될 경우 제거하는것을 고려
     def test_u(self):
         assert isinstance(core.u(u"가"), str)
 
@@ -268,18 +269,28 @@ class MockPostListResponse(MockResponse):
       "url": "http://oauth-test.tistory.com",
       "secondaryUrl": "",
       "page": "1",
-      "count": "1",
+      "count": "2",
       "totalCount": "181",
       "posts": [
         {
           "id": "201",
           "title": "테스트 입니다.",
-          "postUrl": "http://oauth-test.tistory.com/201",
+          "postUrl": "http://oauth-test.tistory.com/entry/hello-world",
           "visibility": "0",
           "categoryId": "0",
           "comments": "0",
           "trackbacks": "0",
           "date": "2018-06-01 17:54:28"
+        },
+        {
+          "id": "202",
+          "title": "다람쥐 헌 쳇바퀴에 타고파",
+          "postUrl": "http://oauth-test.tistory.com/entry/this-is-slogan",
+          "visibility": "0",
+          "categoryId": "0",
+          "comments": "0",
+          "trackbacks": "0",
+          "date": "2018-06-02 12:34:56"
         }
       ]
     }"""
@@ -291,7 +302,18 @@ def test_post_list(tispoon_cli, monkeypatch):
     count = 0
     for post in tispoon_cli.posts:
         count += 1
-    assert count != 0
+    assert count > 0
+
+
+def test_find_post(tispoon_cli, monkeypatch):
+    tispoon_cli.blog = "oauth-test"
+    monkeypatch.setattr("requests.get", mockget(MockPostListResponse()))
+
+    post = tispoon_cli.find_post(title=u"테스트 입니다.")
+    assert post
+
+    post = tispoon_cli.find_post(slogan=u"/hello-world")
+    assert post
 
 
 if __name__ == "__main__":

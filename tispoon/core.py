@@ -542,7 +542,7 @@ class Tispoon(TispoonBase):
                 simplified_slogan = remove_prefix(post_slogan.replace("-", ""))
                 logger.debug("simplified slogan: %s" % simplified_slogan)
 
-                clean_slogan = remove_prefix(slogan)
+                clean_slogan = remove_prefix(slogan.replace("-", ""))
                 if simplified_slogan.startswith(quote(u(clean_slogan))):
                     logger.debug("포스팅 발견! -> %s" % u(post.get("title")))
                     return post
