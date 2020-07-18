@@ -58,4 +58,5 @@ clean:
 		| $(TR) $$'\n' ' ' | $(XARGS) $(FIND) . -name '*.pyc' \
 		| $(XARGS) -n1 $(RM)
 	$(PY) setup.py clean
+	$(RM) -rf build/
 
