@@ -3,7 +3,6 @@
 
 
 import pytest
-from textwrap import dedent
 from tispoon import core
 
 

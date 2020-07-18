@@ -40,7 +40,7 @@ setup(
     ],
     entry_points="""
         [console_scripts]
-        tispoon=tispoon.core:main
+        tispoon=tispoon.cli:main
     """,
     keywords="blog blogging openapi korean tistory library",
     packages=find_packages(),
