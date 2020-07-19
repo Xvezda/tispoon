@@ -35,7 +35,7 @@ py3dist:
 test: py2test py3test
 
 py2test:
-	$(PY) -m pytest -v -s --cov-config=.coveragerc \
+	$(PY2) -m pytest -v -s --cov-config=.coveragerc \
 		--cov-report html --cov-report term \
 		--cov=$(PKG_NAME) $(TEST_DIR)
 
