@@ -8,14 +8,17 @@ TWINE = twine
 
 TR = tr
 RM = rm
+CUT = cut
 SED = sed
 FIND = find
+HEAD = head
 GREP = grep
 XARGS = xargs
-PKG_NAME = tispoon
+PKG_NAME = $(shell \
+		   $(FIND) . -maxdepth 2 -name '__init__.py' | $(CUT) -d'/' -f2 | $(HEAD) -n1)
 METADATA_FILE = $(PKG_NAME)/__about__.py
 PKG_VERSION = $(shell \
-	$(SED) -n -E "s/__version__ = [\"']([^\"']+)[\"']/\1/p" $(METADATA_FILE))
+			  $(SED) -n -E "s/__version__ = [\"']([^\"']+)[\"']/\1/p" $(METADATA_FILE))
 DIST_DIR = dist
 DIST_FILES = $(wildcard $(DIST_DIR)/$(PKG_NAME)-$(PKG_VERSION)*)
 TEST_DIR = tests
